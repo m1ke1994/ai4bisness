@@ -3,7 +3,6 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 load_dotenv(BASE_DIR / ".env")
@@ -21,15 +20,15 @@ def env_list(name: str, default: str = "") -> list[str]:
     return [item.strip() for item in value.split(",") if item.strip()]
 
 
-SECRET_KEY = os.getenv(
-    "DJANGO_SECRET_KEY",
-    "dev-insecure-secret-key-change-me",
+SECRET_KEY = (
+    os.getenv("SECRET_KEY")
+    or os.getenv("DJANGO_SECRET_KEY")
+    or "dev-insecure-secret-key-change-me"
 )
-DEBUG = env_bool("DJANGO_DEBUG", default=True)
-ALLOWED_HOSTS = env_list("DJANGO_ALLOWED_HOSTS", default="localhost,127.0.0.1")
-
-
-# Application definition
+DEBUG = env_bool("DEBUG", default=env_bool("DJANGO_DEBUG", default=True))
+ALLOWED_HOSTS = env_list("ALLOWED_HOSTS")
+if not ALLOWED_HOSTS:
+    ALLOWED_HOSTS = env_list("DJANGO_ALLOWED_HOSTS", default="localhost,127.0.0.1")
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -38,7 +37,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    "apps.core.apps.CoreConfig",
+    "apps.core",
 ]
 
 MIDDLEWARE = [
@@ -70,18 +69,12 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "config.wsgi.application"
 
-
-# Database
-
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
         "NAME": BASE_DIR / "db.sqlite3",
     }
 }
-
-
-# Password validation
 
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -98,24 +91,15 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
-# Internationalization
 LANGUAGE_CODE = "ru-ru"
-
 TIME_ZONE = "Europe/Amsterdam"
-
 USE_I18N = True
-
 USE_TZ = True
 
-
-# Static files (CSS, JavaScript, Images)
-STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
-
-MEDIA_URL = "media/"
 MEDIA_ROOT = BASE_DIR / "media"
-
+STATIC_URL = "/static/"
+MEDIA_URL = "/media/"
 
 LOGGING = {
     "version": 1,
@@ -134,7 +118,7 @@ LOGGING = {
     },
     "root": {
         "handlers": ["console"],
-        "level": "INFO",
+        "level": "ERROR",
     },
     "loggers": {
         "django": {
@@ -144,6 +128,5 @@ LOGGING = {
         }
     },
 }
-
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
