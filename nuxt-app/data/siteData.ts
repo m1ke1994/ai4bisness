@@ -79,9 +79,9 @@ const legacyData = {
 
    
     legalItems: [
-      { label: 'Политика конфиденциальности', href: '#' },
-      { label: 'Публичная оферта', href: '#' },
-      { label: 'Пользовательское соглашение', href: '#' },
+      { label: 'Политика конфиденциальности', href: '/privacy-policy' },
+      { label: 'Публичная оферта', href: '/public-offer' },
+      { label: 'Пользовательское соглашение', href: '/user-agreement' },
     ],
   },
 

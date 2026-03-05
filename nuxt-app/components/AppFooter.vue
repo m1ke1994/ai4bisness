@@ -27,15 +27,14 @@
         <!-- ССЫЛКИ -->
         <div class="flex flex-wrap items-center gap-x-6 gap-y-2 lg:gap-x-8">
 
-          <a
+          <NuxtLink
             v-for="item in legalItems"
             :key="item.id"
-            :href="item.href"
+            :to="item.href"
             class="text-[15px] leading-none tracking-[-0.02em] text-[#8E91A9] transition hover:text-white sm:text-[17px] lg:text-[18px]"
-            @click.prevent="item.href === '#'"
           >
             {{ item.label }}
-          </a>
+          </NuxtLink>
 
         </div>
 
