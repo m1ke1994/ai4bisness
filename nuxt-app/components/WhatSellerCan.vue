@@ -286,17 +286,29 @@ class="fade-item rounded-[18px] border border-[#E6EAF4] bg-white p-4 shadow-sm s
 
 <div class="space-y-2">
 
-<div class="flex gap-2 text-[14px]">
+<div class="space-y-1 rounded-[12px] border border-[#ECEFFF] bg-[#F7F8FF] p-3">
 
-<span class="text-[#4B39FF]">✓</span>
-<span>{{ r.aiDescription }}</span>
+<div class="flex items-center gap-2 text-[12px] font-semibold text-[#4B39FF]">
+<span>✓</span>
+<span>{{ summaryData.meta.mobileAiLabel || summaryData.meta.desktopAiLabel }}</span>
+</div>
+
+<div class="text-[14px] text-[#141633]">
+{{ r.aiDescription }}
+</div>
 
 </div>
 
-<div class="flex gap-2 text-[14px] text-[#2B2E3A]">
+<div class="space-y-1 rounded-[12px] border border-[#E8EBF4] bg-[#F9FAFC] p-3">
 
+<div class="flex items-center gap-2 text-[12px] font-semibold text-[#2B2E3A]">
 <span>—</span>
-<span>{{ r.humanDescription }}</span>
+<span>{{ summaryData.meta.mobileHumanLabel || summaryData.meta.desktopHumanLabel }}</span>
+</div>
+
+<div class="text-[14px] text-[#2B2E3A]">
+{{ r.humanDescription }}
+</div>
 
 </div>
 
