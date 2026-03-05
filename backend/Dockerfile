@@ -1,4 +1,4 @@
-FROM python:3.11-slim
+FROM python:3.12-slim
 
 WORKDIR /app
 
@@ -24,5 +24,5 @@ USER django
 
 EXPOSE 8000
 
-# Запускаем collectstatic только при DJANGO_COLLECTSTATIC=1, затем стартуем gunicorn.
-CMD ["sh", "-c", "if [ \"$DJANGO_COLLECTSTATIC\" = \"1\" ]; then python manage.py collectstatic --noinput; else echo \"Пропуск collectstatic: DJANGO_COLLECTSTATIC!=1\"; fi && gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 3 --timeout 120"]
+# При старте применяем миграции, опционально собираем статику и запускаем gunicorn.
+CMD ["sh", "-c", "python manage.py migrate --noinput && if [ \"$DJANGO_COLLECTSTATIC\" = \"1\" ]; then python manage.py collectstatic --noinput; else echo \"Пропуск collectstatic: DJANGO_COLLECTSTATIC!=1\"; fi && gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 3 --timeout 120"]
