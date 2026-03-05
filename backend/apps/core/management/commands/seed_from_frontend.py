@@ -5,8 +5,6 @@ import re
 import subprocess
 from pathlib import Path
 
-from django.core.files import File
-from django.core.files.storage import default_storage
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 from django.utils.text import slugify
@@ -56,6 +54,7 @@ from apps.core.models import (
     TrainingRightBulletItem,
     TrainingSourceItem,
 )
+from apps.core.services import MediaImporter
 
 
 class Command(BaseCommand):
@@ -75,15 +74,26 @@ class Command(BaseCommand):
         self.missing_media = set()
 
         if options["if_empty"] and SiteSettings.objects.exists():
-            self.stdout.write(self.style.WARNING("Сидинг пропущен: данные уже существуют."))
+            self._log_warn("Сидинг пропущен: данные уже существуют.")
             return
 
-        self.project_root = Path(__file__).resolve().parents[5]
+        self.backend_root = Path(__file__).resolve().parents[4]
+        self.project_root = self.backend_root.parent
         frontend_dir_env = os.getenv("FRONTEND_DIR", "").strip()
-        self.frontend_dir = Path(frontend_dir_env) if frontend_dir_env else self.project_root / "nuxt-app"
+        self.frontend_dir = (Path(frontend_dir_env) if frontend_dir_env else self.project_root / "nuxt-app").resolve()
+        self.tmp_dir = self.backend_root / "tmp"
+        self.site_data_json = self.tmp_dir / "siteData.json"
+        self.site_data_source = self.frontend_dir / "data" / "siteData.ts"
+        self.export_script = self.backend_root / "scripts" / "export_site_data.mjs"
 
         if not self.frontend_dir.exists():
             raise CommandError(f"Не найдена папка фронтенда: {self.frontend_dir}")
+        if not self.export_script.exists():
+            raise CommandError(f"Не найден node-экспортер: {self.export_script}")
+
+        self.media_importer = MediaImporter(frontend_dir=self.frontend_dir)
+        self._log_info(f"Фронтенд: {self.frontend_dir}")
+        self._log_info(f"JSON контента: {self.site_data_json}")
 
         payload = self._load_frontend_payload()
         site_data = payload.get("siteData") or {}
@@ -106,51 +116,94 @@ class Command(BaseCommand):
 
         self.report["images_missing"] = len(self.missing_media)
 
-        self.stdout.write(self.style.SUCCESS("Сидинг завершён."))
-        self.stdout.write(
-            f"Создано: {self.report['created']}, обновлено: {self.report['updated']}, "
-            f"импортировано картинок: {self.report['images_imported']}, "
-            f"переиспользовано картинок: {self.report['images_reused']}, "
-            f"пропущено (нет файла): {self.report['images_missing']}"
+        self._log_ok("Сидинг завершён.")
+        self._log_info(
+            "summary: "
+            f"created={self.report['created']}, "
+            f"updated={self.report['updated']}, "
+            f"images_imported={self.report['images_imported']}, "
+            f"images_reused={self.report['images_reused']}, "
+            f"images_missing={self.report['images_missing']}"
         )
 
         if self.missing_media:
-            self.stdout.write(self.style.WARNING("Отсутствующие файлы:"))
+            self._log_warn("Отсутствующие файлы:")
             for path in sorted(self.missing_media):
-                self.stdout.write(f"- {path}")
+                self._log_warn(path)
+
+    def _log_info(self, message: str):
+        self.stdout.write(f"[INFO] {message}")
+
+    def _log_ok(self, message: str):
+        self.stdout.write(self.style.SUCCESS(f"[OK] {message}"))
+
+    def _log_warn(self, message: str):
+        self.stdout.write(self.style.WARNING(f"[WARN] {message}"))
 
     def _load_frontend_payload(self) -> dict:
-        data_file = self.frontend_dir / "data" / "siteData.ts"
-        if not data_file.exists():
-            raise CommandError(f"Не найден файл контента: {data_file}")
+        if not self.site_data_source.exists():
+            raise CommandError(f"Не найден файл контента: {self.site_data_source}")
 
-        node_script = """
-import fs from 'node:fs';
-import vm from 'node:vm';
-const filePath = process.argv[1];
-let source = fs.readFileSync(filePath, 'utf8');
-source = source.replace(/export\\s+const\\s+siteData\\s*=\\s*/, 'globalThis.siteData = ');
-source += '\\n;globalThis.legacyDataExport = (typeof legacyData !== "undefined") ? legacyData : null;';
-vm.runInThisContext(source, { filename: filePath });
-process.stdout.write(JSON.stringify({ siteData: globalThis.siteData, legacyData: globalThis.legacyDataExport }));
-"""
+        self._ensure_site_data_json()
+
+        if not self.site_data_json.exists():
+            raise CommandError(f"Не найден JSON контента после экспорта: {self.site_data_json}")
+
+        try:
+            with self.site_data_json.open("r", encoding="utf-8") as source_handle:
+                payload = json.load(source_handle)
+        except json.JSONDecodeError as exc:
+            raise CommandError(f"Не удалось распарсить JSON: {self.site_data_json}") from exc
+
+        if not isinstance(payload, dict):
+            raise CommandError("Некорректный формат payload: ожидается JSON-объект.")
+        return payload
+
+    def _ensure_site_data_json(self):
+        needs_export = not self.site_data_json.exists()
+        if not needs_export:
+            try:
+                source_mtime = self.site_data_source.stat().st_mtime
+                json_mtime = self.site_data_json.stat().st_mtime
+                needs_export = source_mtime > json_mtime
+            except OSError:
+                needs_export = True
+
+        if needs_export:
+            self._run_exporter()
+        else:
+            self._log_info("Используется существующий backend/tmp/siteData.json")
+
+    def _run_exporter(self):
+        env = os.environ.copy()
+        env["FRONTEND_DIR"] = str(self.frontend_dir)
+        env["SITE_DATA_JSON"] = str(self.site_data_json)
+        env["SITE_DATA_SOURCE"] = str(self.site_data_source)
+
+        self.tmp_dir.mkdir(parents=True, exist_ok=True)
+        self._log_info("Запуск node-экспортера siteData.ts -> JSON")
 
         try:
             result = subprocess.run(
-                ["node", "--input-type=module", "-e", node_script, str(data_file)],
+                ["node", str(self.export_script)],
                 check=True,
                 capture_output=True,
+                text=True,
+                env=env,
             )
         except FileNotFoundError as exc:
             raise CommandError("Node.js не найден. Для seed_from_frontend нужен node.") from exc
         except subprocess.CalledProcessError as exc:
-            stderr = exc.stderr.decode("utf-8", errors="replace") if isinstance(exc.stderr, (bytes, bytearray)) else str(exc.stderr)
-            raise CommandError(f"Ошибка выполнения Node скрипта: {stderr}") from exc
+            stderr = (exc.stderr or "").strip()
+            raise CommandError(f"Ошибка выполнения export_site_data.mjs: {stderr}") from exc
 
-        try:
-            return json.loads(result.stdout.decode("utf-8"))
-        except json.JSONDecodeError as exc:
-            raise CommandError("Не удалось распарсить JSON из siteData.ts") from exc
+        stdout = (result.stdout or "").strip()
+        if stdout:
+            for line in stdout.splitlines():
+                if line.startswith("["):
+                    self.stdout.write(line)
+                else:
+                    self._log_info(line)
 
     def _clean_text(self, value):
         if value is None:
@@ -163,10 +216,6 @@ process.stdout.write(JSON.stringify({ siteData: globalThis.siteData, legacyData:
             return base
         return f"{prefix}-{index}"
 
-    def _safe_name(self, filename: str) -> str:
-        name = re.sub(r"[^A-Za-z0-9._-]+", "_", filename)
-        return name.strip("._") or "file"
-
     def _set_image(self, instance, field_name: str, src: str, upload_dir: str):
         src = self._clean_text(src)
         image_field = getattr(instance, field_name)
@@ -176,35 +225,19 @@ process.stdout.write(JSON.stringify({ siteData: globalThis.siteData, legacyData:
                 image_field.delete(save=False)
             return
 
-        if src.startswith("http://") or src.startswith("https://"):
+        result = self.media_importer.import_image(src, upload_dir)
+        if result.status == MediaImporter.STATUS_MISSING or not result.storage_name:
             self.missing_media.add(src)
+            self._log_warn(f"missing media [{instance._meta.model_name}.{field_name}]: {src}")
             return
 
-        relative_path = src.lstrip("/")
-        source_file = self.frontend_dir / "public" / relative_path
-        if not source_file.exists():
-            self.missing_media.add(src)
-            return
+        if image_field.name != result.storage_name:
+            image_field.name = result.storage_name
 
-        upload_prefix = self._safe_name(upload_dir.replace("/", "_")) if upload_dir else ""
-        target_basename = self._safe_name(source_file.name)
-        if upload_prefix:
-            target_basename = f"{upload_prefix}_{target_basename}"
-
-        storage_name = image_field.field.generate_filename(instance, target_basename)
-
-        if image_field.name == storage_name:
+        if result.status == MediaImporter.STATUS_IMPORTED:
+            self.report["images_imported"] += 1
+        else:
             self.report["images_reused"] += 1
-            return
-
-        if default_storage.exists(storage_name):
-            image_field.name = storage_name
-            self.report["images_reused"] += 1
-            return
-
-        with source_file.open("rb") as source_handle:
-            image_field.save(target_basename, File(source_handle), save=False)
-        self.report["images_imported"] += 1
 
     def _upsert(self, model, defaults: dict, **lookup):
         obj, created = model.objects.update_or_create(defaults=defaults, **lookup)
