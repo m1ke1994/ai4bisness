@@ -2,13 +2,11 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
-from django.urls import path
-
-from apps.core.views import health_check
+from django.urls import include, path
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-    path("api/health/", health_check, name="api-health"),
+    path("api/", include("apps.core.api_urls")),
 ]
 
 if settings.DEBUG:

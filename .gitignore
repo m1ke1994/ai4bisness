@@ -1,0 +1,16 @@
+**/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+backend/.venv/
+backend/db.sqlite3
+backend/media/
+backend/staticfiles/
+
+nuxt-app/node_modules/
+nuxt-app/.nuxt/
+nuxt-app/.output/
+
+.DS_Store
+Thumbs.db
