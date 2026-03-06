@@ -8,6 +8,7 @@ urlpatterns = [
     path("api/", include("apps.core.urls")),
     path("api/", include("apps.footer.urls")),
     path("api/", include("apps.heroblock.urls")),
+    path("api/", include("apps.pricing.urls")),
 ]
 
 if settings.DEBUG:
