@@ -1,8 +1,10 @@
 from django.db import models
 
+from apps.validators import validate_image_or_svg
+
 
 class SiteHeader(models.Model):
-    logo = models.ImageField(upload_to="header/", verbose_name="Логотип")
+    logo = models.FileField(upload_to="header/", validators=[validate_image_or_svg], verbose_name="Логотип")
     logo_link = models.CharField(max_length=255, verbose_name="Ссылка с логотипа")
     brand_name = models.CharField(max_length=255, verbose_name="Название бренда")
 

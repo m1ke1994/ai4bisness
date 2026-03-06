@@ -1,5 +1,7 @@
 from django.db import models
 
+from apps.validators import validate_image_or_svg
+
 
 class ContactsSection(models.Model):
     title = models.CharField(max_length=255, verbose_name="Первая строка заголовка")
@@ -27,7 +29,7 @@ class ContactChannel(models.Model):
         verbose_name="Секция контактов",
     )
     name = models.CharField(max_length=255, verbose_name="Название канала")
-    icon = models.ImageField(upload_to="contacts/icons/", verbose_name="Иконка")
+    icon = models.FileField(upload_to="contacts/icons/", validators=[validate_image_or_svg], verbose_name="Иконка")
     href = models.CharField(max_length=500, verbose_name="Ссылка")
     sort_order = models.PositiveIntegerField(default=0, verbose_name="Порядок сортировки")
     is_active = models.BooleanField(default=True, verbose_name="Активно")
