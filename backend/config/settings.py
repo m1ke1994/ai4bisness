@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     "apps.heroblock",
     "apps.pricing",
     "apps.reviews",
+    "apps.contacts",
 ]
 
 MIDDLEWARE = [
