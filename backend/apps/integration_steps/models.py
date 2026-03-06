@@ -1,4 +1,4 @@
-from django.db import models
+﻿from django.db import models
 
 
 class IntegrationStepsSection(models.Model):
@@ -10,8 +10,8 @@ class IntegrationStepsSection(models.Model):
     cta_image = models.ImageField(upload_to="integration_steps/", verbose_name="Изображение CTA-карточки")
 
     class Meta:
-        verbose_name = "Этапы интеграции"
-        verbose_name_plural = "Этапы интеграции"
+        verbose_name = "Секция этапов интеграции"
+        verbose_name_plural = "Секция этапов интеграции"
 
     def __str__(self):
         return self.title
@@ -22,7 +22,7 @@ class IntegrationStepItem(models.Model):
         IntegrationStepsSection,
         on_delete=models.CASCADE,
         related_name="items",
-        verbose_name="Этапы интеграции",
+        verbose_name="Секция этапов интеграции",
     )
     day = models.CharField(max_length=50, verbose_name="Подпись дня")
     title = models.CharField(max_length=255, verbose_name="Название этапа")
