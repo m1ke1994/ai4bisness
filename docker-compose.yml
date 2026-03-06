@@ -30,7 +30,7 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      - backend_media:/app/media
+      - backend_media_data:/app/media
       - ./nuxt-app:/app_frontend:ro
 
   frontend:
@@ -43,4 +43,4 @@ services:
 
 volumes:
   postgres_data:
-  backend_media:
+  backend_media_data:
