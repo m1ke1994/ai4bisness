@@ -13,6 +13,7 @@ urlpatterns = [
     path("api/", include("apps.contacts.urls")),
     path("api/", include("apps.integration_steps.urls")),
     path("api/", include("apps.channels.urls")),
+    path("api/", include("apps.system_integrations.urls")),
 ]
 
 if settings.DEBUG:

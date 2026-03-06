@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     "apps.contacts",
     "apps.integration_steps",
     "apps.channels",
+    "apps.system_integrations",
 ]
 
 MIDDLEWARE = [
