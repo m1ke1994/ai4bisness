@@ -64,7 +64,7 @@
             :style="{ width: `${100 / slidesPerView}%` }"
           >
             <article
-              class="fade-item flex h-full min-w-0 flex-col rounded-[28px] border border-white/5 bg-[#1F2230] p-5 text-left shadow-[0_20px_60px_rgba(0,0,0,0.28)] sm:min-h-[500px] sm:p-8 lg:h-[520px] lg:p-10"
+              class="fade-item visible flex h-full min-w-0 flex-col rounded-[28px] border border-white/5 bg-[#1F2230] p-5 text-left shadow-[0_20px_60px_rgba(0,0,0,0.28)] sm:min-h-[500px] sm:p-8 lg:h-[520px] lg:p-10"
             >
               <div class="min-h-0 flex-1 overflow-hidden">
                 <h3 class="break-words text-[28px] font-medium leading-tight tracking-[-0.02em] text-white">
