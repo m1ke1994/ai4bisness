@@ -1,13 +1,89 @@
-﻿<script setup>
+<script setup>
+import { computed } from 'vue'
+import { fetchPricingSection } from '~/data/api'
 import { siteData } from '~/data/siteData'
 
 const CONTACT_FORM_OPEN_EVENT = siteData.events.contactFormOpen
-const pricingData = siteData.pricing
-const pricingPlans = pricingData.items
+const fallbackPricingData = siteData.pricing
+
+const { data: pricingSection } = useAsyncData('pricing-section', fetchPricingSection, {
+  server: false,
+  default: () => null,
+})
+
+const pricingData = computed(() => {
+  if (!pricingSection.value) {
+    return fallbackPricingData
+  }
+
+  const mappedItems = pricingSection.value.items.map((plan, index) => {
+    const fallbackPlan = fallbackPricingData.items[index]
+
+    return {
+      id: plan.id || fallbackPlan?.id || `pricing-plan-${index + 1}`,
+      title: plan.title || fallbackPlan?.title || '',
+      subtitle: plan.subtitle || fallbackPlan?.subtitle || '',
+      channels: plan.channels || fallbackPlan?.channels || '',
+      accentBadge: plan.accentBadge || fallbackPlan?.accentBadge || '',
+      inheritLine: plan.inheritLine || fallbackPlan?.inheritLine || '',
+      meta: {
+        featured: plan.meta.featured ?? fallbackPlan?.meta?.featured ?? false,
+        darkCard: plan.meta.darkCard ?? fallbackPlan?.meta?.darkCard ?? false,
+      },
+      cta: {
+        ...fallbackPlan?.cta,
+        label: plan.cta.label || fallbackPlan?.cta?.label || '',
+        href: plan.cta.href || fallbackPlan?.cta?.href || '#contacts',
+      },
+      features: plan.features.length ? plan.features : (fallbackPlan?.features || []),
+    }
+  })
+
+  return {
+    ...fallbackPricingData,
+    title: pricingSection.value.title || fallbackPricingData.title,
+    subtitle: pricingSection.value.subtitle || fallbackPricingData.subtitle,
+    items: mappedItems.length ? mappedItems : fallbackPricingData.items,
+    meta: {
+      ...fallbackPricingData.meta,
+      channelsLabel: pricingSection.value.channelsLabel || fallbackPricingData.meta.channelsLabel,
+    },
+  }
+})
+
+const pricingPlans = computed(() => pricingData.value.items)
 
 const openContactFormModal = () => {
   if (typeof window === 'undefined') return
   window.dispatchEvent(new Event(CONTACT_FORM_OPEN_EVENT))
+}
+
+const handlePlanCtaClick = (plan) => {
+  const href = (plan?.cta?.href || '').trim()
+
+  if (!href || href === '#contacts') {
+    openContactFormModal()
+    return
+  }
+
+  if (typeof window === 'undefined') return
+
+  if (href.startsWith('#')) {
+    const target = document.querySelector(href)
+    if (target) {
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      return
+    }
+    window.location.hash = href.slice(1)
+    return
+  }
+
+  if (/^((https?:)?\/\/|mailto:|tel:|tg:)/i.test(href)) {
+    window.open(href, '_blank', 'noopener,noreferrer')
+    return
+  }
+
+  window.location.assign(href)
 }
 </script>
 
@@ -45,7 +121,7 @@ const openContactFormModal = () => {
         <article
           v-for="plan in pricingPlans"
           :key="plan.id"
-          class="fade-item group relative flex h-full min-h-[560px] flex-col overflow-hidden rounded-[26px] border p-5 shadow-[0_14px_40px_rgba(17,24,39,0.06)] transition-all duration-500 hover:-translate-y-1 sm:min-h-[600px] sm:rounded-[28px] sm:p-6 lg:min-h-[620px]"
+          class="fade-item visible group relative flex h-full min-h-[560px] flex-col overflow-hidden rounded-[26px] border p-5 shadow-[0_14px_40px_rgba(17,24,39,0.06)] transition-all duration-500 hover:-translate-y-1 sm:min-h-[600px] sm:rounded-[28px] sm:p-6 lg:min-h-[620px]"
           :class="
             plan.meta.darkCard
               ? 'border-[#3A3D63] bg-[linear-gradient(180deg,#171A31_0%,#121524_100%)] shadow-[0_20px_60px_rgba(28,31,67,0.26)] hover:shadow-[0_28px_70px_rgba(28,31,67,0.34)]'
@@ -170,7 +246,7 @@ const openContactFormModal = () => {
                       : 'border-[#E1E5F3] bg-white text-[#2A2F45] shadow-[0_10px_24px_rgba(18,26,52,0.05)] hover:border-[#D0D7EE] hover:bg-[#FBFBFE] focus-visible:ring-[#6F63FF]/30'
                 "
                 :aria-label="`${plan.cta.label}: ${plan.title}`"
-                @click="openContactFormModal"
+                @click="handlePlanCtaClick(plan)"
               >
                 {{ plan.cta.label }}
               </button>

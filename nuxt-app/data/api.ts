@@ -221,6 +221,56 @@ export type ContactsSectionData = {
   }>
 }
 
+type PricingApiFeature = {
+  text?: string
+}
+
+type PricingApiItem = {
+  title?: string
+  subtitle?: string
+  accent_badge?: string
+  inherit_line?: string
+  channels?: string
+  cta_label?: string
+  cta_link?: string
+  is_featured?: boolean
+  is_dark_card?: boolean
+  features?: PricingApiFeature[]
+}
+
+type PricingApiResponse = {
+  title?: string
+  subtitle?: string
+  channels_label?: string
+  items?: PricingApiItem[]
+}
+
+export type PricingSectionData = {
+  title: string
+  subtitle: string
+  channelsLabel: string
+  items: Array<{
+    id: string
+    title: string
+    subtitle: string
+    channels: string
+    accentBadge: string
+    inheritLine: string
+    meta: {
+      featured: boolean
+      darkCard: boolean
+    }
+    cta: {
+      label: string
+      href: string
+    }
+    features: Array<{
+      id: string
+      text: string
+    }>
+  }>
+}
+
 const normalizeBaseUrl = (value: string) => value.replace(/\/+$/, '')
 
 const getBackendBaseUrl = () => {
@@ -469,6 +519,58 @@ export const fetchContactsSection = async (): Promise<ContactsSectionData | null
       },
       channelsTitle: (payload?.channels_title || '').trim(),
       channelsSubtitle: (payload?.channels_subtitle || '').trim(),
+      items,
+    }
+  } catch {
+    return null
+  }
+}
+
+export const fetchPricingSection = async (): Promise<PricingSectionData | null> => {
+  const baseUrl = normalizeBaseUrl(getBackendBaseUrl())
+
+  try {
+    const payload = await $fetch<PricingApiResponse>('/api/pricing/', {
+      baseURL: baseUrl,
+    })
+
+    const items = Array.isArray(payload?.items)
+      ? payload.items
+          .map((item, index) => {
+            const features = Array.isArray(item?.features)
+              ? item.features
+                  .map((feature, featureIndex) => ({
+                    id: `pricing-feature-${index + 1}-${featureIndex + 1}`,
+                    text: (feature?.text || '').trim(),
+                  }))
+                  .filter((feature) => Boolean(feature.text))
+              : []
+
+            return {
+              id: `pricing-plan-${index + 1}`,
+              title: (item?.title || '').trim(),
+              subtitle: (item?.subtitle || '').trim(),
+              channels: (item?.channels || '').trim(),
+              accentBadge: (item?.accent_badge || '').trim(),
+              inheritLine: (item?.inherit_line || '').trim(),
+              meta: {
+                featured: Boolean(item?.is_featured),
+                darkCard: Boolean(item?.is_dark_card),
+              },
+              cta: {
+                label: (item?.cta_label || '').trim(),
+                href: (item?.cta_link || '').trim(),
+              },
+              features,
+            }
+          })
+          .filter((item) => Boolean(item.title || item.subtitle || item.features.length))
+      : []
+
+    return {
+      title: (payload?.title || '').trim(),
+      subtitle: (payload?.subtitle || '').trim(),
+      channelsLabel: (payload?.channels_label || '').trim(),
       items,
     }
   } catch {
