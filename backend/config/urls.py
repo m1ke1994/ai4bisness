@@ -7,6 +7,7 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/", include("apps.core.urls")),
     path("api/", include("apps.footer.urls")),
+    path("api/", include("apps.heroblock.urls")),
 ]
 
 if settings.DEBUG:
