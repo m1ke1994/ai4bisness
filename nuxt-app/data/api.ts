@@ -172,6 +172,55 @@ export type ChannelsSectionData = {
   }>
 }
 
+type ContactsApiItem = {
+  name?: string
+  icon?: string | null
+  href?: string
+}
+
+type ContactsApiResponse = {
+  title?: string
+  subtitle?: string
+  description?: string
+  meta?: {
+    headingLine3?: string
+  }
+  media?: {
+    sectionBackground?: string | null
+    cardBackground?: string | null
+  }
+  channels_title?: string
+  channels_subtitle?: string
+  items?: ContactsApiItem[]
+}
+
+export type ContactsSectionData = {
+  title: string
+  subtitle: string
+  description: string
+  meta: {
+    headingLine3: string
+  }
+  media: {
+    sectionBackground: {
+      src: string
+      alt: string
+    }
+    cardBackground: {
+      src: string
+      alt: string
+    }
+  }
+  channelsTitle: string
+  channelsSubtitle: string
+  items: Array<{
+    id: string
+    name: string
+    href: string
+    icon: string
+  }>
+}
+
 const normalizeBaseUrl = (value: string) => value.replace(/\/+$/, '')
 
 const getBackendBaseUrl = () => {
@@ -375,6 +424,51 @@ export const fetchChannelsSection = async (): Promise<ChannelsSectionData | null
           alt: '',
         },
       },
+      items,
+    }
+  } catch {
+    return null
+  }
+}
+
+export const fetchContactsSection = async (): Promise<ContactsSectionData | null> => {
+  const baseUrl = normalizeBaseUrl(getBackendBaseUrl())
+
+  try {
+    const payload = await $fetch<ContactsApiResponse>('/api/contacts/', {
+      baseURL: baseUrl,
+    })
+
+    const items = Array.isArray(payload?.items)
+      ? payload.items
+          .map((item, index) => ({
+            id: `contact-channel-${index + 1}`,
+            name: (item?.name || '').trim(),
+            href: (item?.href || '').trim(),
+            icon: normalizeMediaUrl(item?.icon, baseUrl),
+          }))
+          .filter((item) => Boolean(item.name && item.href))
+      : []
+
+    return {
+      title: (payload?.title || '').trim(),
+      subtitle: (payload?.subtitle || '').trim(),
+      description: (payload?.description || '').trim(),
+      meta: {
+        headingLine3: (payload?.meta?.headingLine3 || '').trim(),
+      },
+      media: {
+        sectionBackground: {
+          src: normalizeMediaUrl(payload?.media?.sectionBackground, baseUrl),
+          alt: '',
+        },
+        cardBackground: {
+          src: normalizeMediaUrl(payload?.media?.cardBackground, baseUrl),
+          alt: '',
+        },
+      },
+      channelsTitle: (payload?.channels_title || '').trim(),
+      channelsSubtitle: (payload?.channels_subtitle || '').trim(),
       items,
     }
   } catch {

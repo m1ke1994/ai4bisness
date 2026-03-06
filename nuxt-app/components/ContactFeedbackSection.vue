@@ -56,11 +56,7 @@
               </span>
             </h2>
 
-            <p
-              class="mt-6 max-w-[620px] text-[15px] leading-[1.45] tracking-[-0.02em] text-[#ECEAFF] sm:text-[18px] lg:text-[20px] xl:mt-8 xl:text-[22px]"
-            >
-              {{ contactsData.description }}
-            </p>
+          
           </div>
 
           <!-- ПРАВАЯ ФИОЛЕТОВАЯ КАРТОЧКА -->
@@ -99,8 +95,8 @@
                 <h3
                   class="text-[32px] font-semibold leading-[1.1] tracking-[-0.03em] text-white lg:text-[40px]"
                 >
-                  Выберите удобный
-                  <span class="block">канал связи</span>
+                  {{ contactsData.channelsTitle }}
+                  <span class="block">{{ contactsData.channelsSubtitle }}</span>
                 </h3>
 
                 <!-- СЕТКА КАНАЛОВ -->
@@ -151,13 +147,13 @@
 </template>
 
 <script setup>
-
+import { computed } from 'vue'
+import { fetchContactsSection } from '~/data/api'
 import { siteData } from '~/data/siteData'
 
-const contactsData = siteData.contacts
+const fallbackContactsData = siteData.contacts
 
-const socialMedia = [
- 
+const fallbackSocialMedia = [
   { id: 'telegram', name: 'Telegram', icon: '/images/icons/telegram.svg', href: 'https://example.com' },
   { id: 'avito', name: 'Avito', icon: '/images/icons/avito.svg', href: 'https://example.com' },
   { id: 'instagram', name: 'Instagram', icon: '/images/icons/instagram.svg', href: 'https://example.com' },
@@ -167,7 +163,61 @@ const socialMedia = [
   { id: 'tiktok', name: 'TikTok', icon: '/images/icons/tiktok.svg', href: 'https://example.com' },
   { id: 'mail', name: 'Mail', icon: '/images/icons/mail.svg', href: 'https://example.com' },
   { id: 'vk', name: 'ВКонтакте', icon: '/images/icons/vk.svg', href: 'https://example.com' },
-  { id: 'max', name: 'Max', icon: '/images/icons/Max.svg', href: 'https://example.com' }
+  { id: 'max', name: 'Max', icon: '/images/icons/Max.svg', href: 'https://example.com' },
 ]
 
+const { data: contactsSection } = useAsyncData('contacts-section', fetchContactsSection, {
+  server: false,
+  default: () => null,
+})
+
+const contactsData = computed(() => {
+  const fallbackChannelsTitle = fallbackContactsData?.meta?.card?.titleLine1 || 'Выберите удобный'
+  const fallbackChannelsSubtitle = fallbackContactsData?.meta?.card?.titleLine2 || 'канал связи'
+
+  if (!contactsSection.value) {
+    return {
+      ...fallbackContactsData,
+      channelsTitle: fallbackChannelsTitle,
+      channelsSubtitle: fallbackChannelsSubtitle,
+    }
+  }
+
+  return {
+    ...fallbackContactsData,
+    title: contactsSection.value.title || fallbackContactsData.title,
+    subtitle: contactsSection.value.subtitle || fallbackContactsData.subtitle,
+    description: contactsSection.value.description || fallbackContactsData.description,
+    meta: {
+      ...fallbackContactsData.meta,
+      headingLine3: contactsSection.value.meta.headingLine3 || fallbackContactsData.meta.headingLine3,
+    },
+    media: {
+      ...fallbackContactsData.media,
+      sectionBackground: {
+        ...fallbackContactsData.media.sectionBackground,
+        src: contactsSection.value.media.sectionBackground.src || fallbackContactsData.media.sectionBackground.src,
+      },
+      cardBackground: {
+        ...fallbackContactsData.media.cardBackground,
+        src: contactsSection.value.media.cardBackground.src || fallbackContactsData.media.cardBackground.src,
+      },
+    },
+    channelsTitle: contactsSection.value.channelsTitle || fallbackChannelsTitle,
+    channelsSubtitle: contactsSection.value.channelsSubtitle || fallbackChannelsSubtitle,
+  }
+})
+
+const socialMedia = computed(() => {
+  if (!contactsSection.value || !contactsSection.value.items.length) {
+    return fallbackSocialMedia
+  }
+
+  return contactsSection.value.items.map((item) => ({
+    id: item.id,
+    name: item.name,
+    icon: item.icon,
+    href: item.href,
+  }))
+})
 </script>
