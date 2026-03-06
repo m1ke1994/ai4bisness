@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     "apps.reviews",
     "apps.contacts",
     "apps.integration_steps",
+    "apps.channels",
 ]
 
 MIDDLEWARE = [
