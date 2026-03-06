@@ -1,10 +1,11 @@
 ﻿<script setup>
-import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { fetchHeaderSection } from '~/data/api'
 import { siteData } from '~/data/siteData'
 
 const navData = siteData.nav
 const navItemsByHref = Object.fromEntries((navData.items || []).map((item) => [item.href, item]))
-const navItems = [
+const fallbackNavItems = [
   navItemsByHref['#advantages'],
   {
     id: 'nav-integrations',
@@ -19,6 +20,24 @@ const navItems = [
   navItemsByHref['#reviews'],
   navItemsByHref['#contacts'],
 ].filter(Boolean)
+
+const { data: headerData } = useAsyncData('header-section', fetchHeaderSection, {
+  server: false,
+  default: () => null,
+})
+
+const brandName = computed(() => headerData.value?.brandName || siteData.meta.brandName)
+const brandHref = computed(() => headerData.value?.logoLink || navData.meta.brandHref)
+const logoSrc = computed(() => headerData.value?.logo || siteData.assets.media.logo.src)
+
+const navItems = computed(() => {
+  if (headerData.value?.menuItems?.length) {
+    return headerData.value.menuItems
+  }
+
+  return fallbackNavItems
+})
+
 const mobileSocialItems = navData.meta.mobileSocials
 
 const isMobileMenuOpen = ref(false)
@@ -211,15 +230,15 @@ onBeforeUnmount(() => {
   <header class="fixed left-0 top-0 z-[1000] w-full bg-[#02030A] shadow-[0_8px_28px_rgba(0,0,0,0.24)]">
     <div class="mx-auto w-full max-w-[1720px] px-4 sm:px-6 lg:px-10">
       <div class="relative flex h-[74px] items-center justify-between lg:h-[88px]">
-        <a :href="navData.meta.brandHref" class="flex shrink-0 items-center gap-3 text-white" :aria-label="siteData.meta.brandName">
+        <a :href="brandHref" class="flex shrink-0 items-center gap-3 text-white" :aria-label="brandName">
           <img
-            :src="siteData.assets.media.logo.src"
-            :alt="siteData.meta.brandName"
+            :src="logoSrc"
+            :alt="brandName"
             class="h-[100px] w-auto rounded-full sm:h-[100px] lg:h-[120px] xl:h-[128px]"
             draggable="false"
           />
           <span class="text-[20px] font-semibold leading-none tracking-[-0.02em] sm:text-[24px] lg:text-[26px]">
-            {{ siteData.meta.brandName }}
+            {{ brandName }}
           </span>
         </a>
 
@@ -308,19 +327,19 @@ onBeforeUnmount(() => {
         <div class="mx-auto w-full max-w-[1720px] px-4 sm:px-6">
           <div class="flex h-[74px] items-center justify-between">
             <a
-              :href="navData.meta.brandHref"
+              :href="brandHref"
               class="flex shrink-0 items-center gap-3 text-white"
-              :aria-label="siteData.meta.brandName"
+              :aria-label="brandName"
               @click="handleMenuItemClick"
             >
               <img
-                :src="siteData.assets.media.logo.src"
-                :alt="siteData.meta.brandName"
+                :src="logoSrc"
+                :alt="brandName"
                 class="h-14 w-auto rounded-full"
                 draggable="false"
               />
               <span class="text-[20px] font-semibold leading-none tracking-[-0.02em]">
-                {{ siteData.meta.brandName }}
+                {{ brandName }}
               </span>
             </a>
 
