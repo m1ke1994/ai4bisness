@@ -43,6 +43,32 @@ export type FooterSectionData = {
   }>
 }
 
+type HeroApiItem = {
+  value?: string
+  text?: string
+}
+
+type HeroApiResponse = {
+  title?: string
+  subtitle?: string
+  description?: string
+  image?: string | null
+  stats_disclaimer?: string
+  items?: HeroApiItem[]
+}
+
+export type HeroSectionData = {
+  title: string
+  subtitle: string
+  description: string
+  image: string
+  statsDisclaimer: string
+  items: Array<{
+    value: string
+    text: string
+  }>
+}
+
 const normalizeBaseUrl = (value: string) => value.replace(/\/+$/, '')
 
 const getBackendBaseUrl = () => {
@@ -111,6 +137,36 @@ export const fetchFooterSection = async (): Promise<FooterSectionData | null> =>
       logo: normalizeMediaUrl(payload?.logo, baseUrl),
       logoLink: (payload?.logo_link || '/').trim() || '/',
       links,
+    }
+  } catch {
+    return null
+  }
+}
+
+export const fetchHeroSection = async (): Promise<HeroSectionData | null> => {
+  const baseUrl = normalizeBaseUrl(getBackendBaseUrl())
+
+  try {
+    const payload = await $fetch<HeroApiResponse>('/api/hero/', {
+      baseURL: baseUrl,
+    })
+
+    const items = Array.isArray(payload?.items)
+      ? payload.items
+          .map((item) => ({
+            value: (item?.value || '').trim(),
+            text: (item?.text || '').trim(),
+          }))
+          .filter((item) => Boolean(item.value || item.text))
+      : []
+
+    return {
+      title: (payload?.title || '').trim(),
+      subtitle: (payload?.subtitle || '').trim(),
+      description: (payload?.description || '').trim(),
+      image: normalizeMediaUrl(payload?.image, baseUrl),
+      statsDisclaimer: (payload?.stats_disclaimer || '').trim(),
+      items,
     }
   } catch {
     return null

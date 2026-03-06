@@ -1,10 +1,49 @@
 ﻿<script setup>
+import { computed } from 'vue'
+import { fetchHeroSection } from '~/data/api'
 import { siteData } from '~/data/siteData'
 
-const heroData = siteData.hero
-const hiroMobileImageVars = heroData.meta.imageVars.mobile
-const hiroDesktopImageVars = heroData.meta.imageVars.desktop
-const stats = heroData.items
+const fallbackHeroData = siteData.hero
+
+const { data: heroSection } = useAsyncData('hero-section', fetchHeroSection, {
+  server: false,
+  default: () => null,
+})
+
+const heroData = computed(() => {
+  if (!heroSection.value) {
+    return fallbackHeroData
+  }
+
+  const items = heroSection.value.items.map((item, index) => ({
+    id: `hero-stat-${index + 1}`,
+    value: item.value,
+    text: item.text,
+  }))
+
+  return {
+    ...fallbackHeroData,
+    title: heroSection.value.title || fallbackHeroData.title,
+    subtitle: heroSection.value.subtitle || fallbackHeroData.subtitle,
+    description: heroSection.value.description || fallbackHeroData.description,
+    items: items.length ? items : fallbackHeroData.items,
+    media: {
+      ...fallbackHeroData.media,
+      image: {
+        ...fallbackHeroData.media.image,
+        src: heroSection.value.image || fallbackHeroData.media.image.src,
+      },
+    },
+    meta: {
+      ...fallbackHeroData.meta,
+      statsDisclaimer: heroSection.value.statsDisclaimer || fallbackHeroData.meta.statsDisclaimer,
+    },
+  }
+})
+
+const hiroMobileImageVars = fallbackHeroData.meta.imageVars.mobile
+const hiroDesktopImageVars = fallbackHeroData.meta.imageVars.desktop
+const stats = computed(() => heroData.value.items)
 </script>
 
 <template>
