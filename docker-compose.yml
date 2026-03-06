@@ -16,30 +16,27 @@ services:
   backend:
     build:
       context: ./backend
-      dockerfile: Dockerfile
     depends_on:
       db:
         condition: service_healthy
     environment:
       DEBUG: "1"
-      SECRET_KEY: change-me
+      SECRET_KEY: change-me-in-production
       ALLOWED_HOSTS: localhost,127.0.0.1,backend
-      DB_NAME: cms
-      DB_USER: cms
-      DB_PASSWORD: cms
-      DB_HOST: db
-      DB_PORT: "5432"
-      CORS_ALLOWED_ORIGINS: http://localhost:3000,http://127.0.0.1:3000
+      DATABASE_URL: postgresql://cms:cms@db:5432/cms
+      CORS_ALLOWED_ORIGINS: http://localhost:3000,http://127.0.0.1:3000,http://frontend:3000
+      CSRF_TRUSTED_ORIGINS: http://localhost:3000,http://127.0.0.1:3000,http://frontend:3000
+      FRONTEND_DIR: /app_frontend
     ports:
       - "8000:8000"
     volumes:
-      - ./backend:/app
-    command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+      - backend_media:/app/media
+      - ./nuxt-app:/app_frontend:ro
+    user: "0:0"
 
   frontend:
     build:
       context: ./nuxt-app
-      dockerfile: Dockerfile
     depends_on:
       - backend
     ports:
@@ -47,4 +44,4 @@ services:
 
 volumes:
   postgres_data:
-    name: ai_postgres_data_local_v1
+  backend_media:
