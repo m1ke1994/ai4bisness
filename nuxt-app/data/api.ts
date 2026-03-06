@@ -116,6 +116,62 @@ export type ReviewsSectionData = {
   }>
 }
 
+type ChannelsApiItem = {
+  name?: string
+  href?: string
+  icon?: {
+    src?: string | null
+    alt?: string
+  }
+}
+
+type ChannelsApiResponse = {
+  title?: string
+  subtitle?: string
+  description?: string
+  meta?: {
+    itemAriaLabelPrefix?: string
+  }
+  media?: {
+    background?: string | null
+    image?: string | null
+    secondaryImage?: string | null
+  }
+  items?: ChannelsApiItem[]
+}
+
+export type ChannelsSectionData = {
+  title: string
+  subtitle: string
+  description: string
+  meta: {
+    itemAriaLabelPrefix: string
+  }
+  media: {
+    background: {
+      src: string
+      alt: string
+    }
+    image: {
+      src: string
+      alt: string
+    }
+    secondaryImage: {
+      src: string
+      alt: string
+    }
+  }
+  items: Array<{
+    id: string
+    name: string
+    href: string
+    icon: {
+      src: string
+      alt: string
+    }
+  }>
+}
+
 const normalizeBaseUrl = (value: string) => value.replace(/\/+$/, '')
 
 const getBackendBaseUrl = () => {
@@ -268,6 +324,56 @@ export const fetchReviewsSection = async (): Promise<ReviewsSectionData | null> 
       meta: {
         modalResultsTitle: (payload?.meta?.modal_results_title || '').trim(),
         actions: payload?.meta?.actions || {},
+      },
+      items,
+    }
+  } catch {
+    return null
+  }
+}
+
+export const fetchChannelsSection = async (): Promise<ChannelsSectionData | null> => {
+  const baseUrl = normalizeBaseUrl(getBackendBaseUrl())
+
+  try {
+    const payload = await $fetch<ChannelsApiResponse>('/api/channels/', {
+      baseURL: baseUrl,
+    })
+
+    const items = Array.isArray(payload?.items)
+      ? payload.items
+          .map((item, index) => ({
+            id: `channel-${index + 1}`,
+            name: (item?.name || '').trim(),
+            href: (item?.href || '').trim(),
+            icon: {
+              src: normalizeMediaUrl(item?.icon?.src, baseUrl),
+              alt: (item?.icon?.alt || item?.name || '').trim(),
+            },
+          }))
+          .filter((item) => Boolean(item.name && item.href))
+      : []
+
+    return {
+      title: (payload?.title || '').trim(),
+      subtitle: (payload?.subtitle || '').trim(),
+      description: (payload?.description || '').trim(),
+      meta: {
+        itemAriaLabelPrefix: (payload?.meta?.itemAriaLabelPrefix || '').trim(),
+      },
+      media: {
+        background: {
+          src: normalizeMediaUrl(payload?.media?.background, baseUrl),
+          alt: '',
+        },
+        image: {
+          src: normalizeMediaUrl(payload?.media?.image, baseUrl),
+          alt: '',
+        },
+        secondaryImage: {
+          src: normalizeMediaUrl(payload?.media?.secondaryImage, baseUrl),
+          alt: '',
+        },
       },
       items,
     }

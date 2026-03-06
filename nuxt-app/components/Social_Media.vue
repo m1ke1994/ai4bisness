@@ -1,8 +1,50 @@
-﻿<script setup>
+<script setup>
+import { computed } from 'vue'
+import { fetchChannelsSection } from '~/data/api'
 import { siteData } from '~/data/siteData'
 
-const channelsData = siteData.channels
-const channelItems = channelsData.items
+const fallbackChannelsData = siteData.channels
+
+const { data: channelsSection } = useAsyncData('channels-section', fetchChannelsSection, {
+  server: false,
+  default: () => null,
+})
+
+const channelsData = computed(() => {
+  if (!channelsSection.value) {
+    return fallbackChannelsData
+  }
+
+  return {
+    ...fallbackChannelsData,
+    title: channelsSection.value.title || fallbackChannelsData.title,
+    subtitle: channelsSection.value.subtitle || fallbackChannelsData.subtitle,
+    description: channelsSection.value.description || fallbackChannelsData.description,
+    items: channelsSection.value.items.length ? channelsSection.value.items : fallbackChannelsData.items,
+    meta: {
+      ...fallbackChannelsData.meta,
+      itemAriaLabelPrefix:
+        channelsSection.value.meta.itemAriaLabelPrefix || fallbackChannelsData.meta.itemAriaLabelPrefix,
+    },
+    media: {
+      ...fallbackChannelsData.media,
+      background: {
+        ...fallbackChannelsData.media.background,
+        src: channelsSection.value.media.background.src || fallbackChannelsData.media.background.src,
+      },
+      image: {
+        ...fallbackChannelsData.media.image,
+        src: channelsSection.value.media.image.src || fallbackChannelsData.media.image.src,
+      },
+      secondaryImage: {
+        ...fallbackChannelsData.media.secondaryImage,
+        src: channelsSection.value.media.secondaryImage.src || fallbackChannelsData.media.secondaryImage.src,
+      },
+    },
+  }
+})
+
+const channelItems = computed(() => channelsData.value.items)
 </script>
 
 <template>
@@ -46,9 +88,9 @@ const channelItems = channelsData.items
           {{ channelsData.subtitle }}
         </div>
 
-        <h4 class="mt-4 text-[22px] font-semibold tracking-[-0.03em] text-[#fbfcfd] sm:text-[26px]">
+        <!-- <h4 class="mt-4 text-[22px] font-semibold tracking-[-0.03em] text-[#fbfcfd] sm:text-[26px]">
           {{ channelsData.title }}
-        </h4>
+        </h4> -->
 
         <p class="mt-2 max-w-[720px] text-[13px] leading-[1.55] text-[#fafbfc] sm:text-[14px]">
           {{ channelsData.description }}
