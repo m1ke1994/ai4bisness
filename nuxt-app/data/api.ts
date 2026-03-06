@@ -271,6 +271,56 @@ export type PricingSectionData = {
   }>
 }
 
+type IntegrationStepsApiItem = {
+  day?: string
+  title?: string
+  description?: string
+  image?: string | null
+}
+
+type IntegrationStepsApiResponse = {
+  title?: string
+  subtitle?: string
+  items?: IntegrationStepsApiItem[]
+  cta?: {
+    titleLines?: string[]
+    media?: {
+      background?: string | null
+      image?: string | null
+    }
+  }
+}
+
+export type IntegrationStepsSectionData = {
+  title: string
+  subtitle: string
+  items: Array<{
+    id: string
+    day: string
+    title: string
+    description: string
+    media: {
+      image: {
+        src: string
+        alt: string
+      }
+    }
+  }>
+  cta: {
+    titleLines: string[]
+    media: {
+      background: {
+        src: string
+        alt: string
+      }
+      image: {
+        src: string
+        alt: string
+      }
+    }
+  }
+}
+
 const normalizeBaseUrl = (value: string) => value.replace(/\/+$/, '')
 
 const getBackendBaseUrl = () => {
@@ -572,6 +622,58 @@ export const fetchPricingSection = async (): Promise<PricingSectionData | null> 
       subtitle: (payload?.subtitle || '').trim(),
       channelsLabel: (payload?.channels_label || '').trim(),
       items,
+    }
+  } catch {
+    return null
+  }
+}
+
+export const fetchIntegrationStepsSection = async (): Promise<IntegrationStepsSectionData | null> => {
+  const baseUrl = normalizeBaseUrl(getBackendBaseUrl())
+
+  try {
+    const payload = await $fetch<IntegrationStepsApiResponse>('/api/integration-steps/', {
+      baseURL: baseUrl,
+    })
+
+    const items = Array.isArray(payload?.items)
+      ? payload.items
+          .map((item, index) => ({
+            id: `step-${index + 1}`,
+            day: (item?.day || '').trim(),
+            title: (item?.title || '').trim(),
+            description: (item?.description || '').trim(),
+            media: {
+              image: {
+                src: normalizeMediaUrl(item?.image, baseUrl),
+                alt: (item?.title || '').trim(),
+              },
+            },
+          }))
+          .filter((item) => Boolean(item.day || item.title || item.description || item.media.image.src))
+      : []
+
+    const titleLines = Array.isArray(payload?.cta?.titleLines)
+      ? payload.cta.titleLines.map((line) => (line || '').trim()).slice(0, 2)
+      : []
+
+    return {
+      title: (payload?.title || '').trim(),
+      subtitle: (payload?.subtitle || '').trim(),
+      items,
+      cta: {
+        titleLines,
+        media: {
+          background: {
+            src: normalizeMediaUrl(payload?.cta?.media?.background, baseUrl),
+            alt: '',
+          },
+          image: {
+            src: normalizeMediaUrl(payload?.cta?.media?.image, baseUrl),
+            alt: '',
+          },
+        },
+      },
     }
   } catch {
     return null

@@ -1,13 +1,55 @@
 ﻿<script setup>
+import { computed } from 'vue'
+import { fetchIntegrationStepsSection } from '~/data/api'
 import { siteData } from '~/data/siteData'
 
-const integrationStepsData = siteData.steps
-const integrationSteps = integrationStepsData.items
-const firstRowSteps = integrationSteps.slice(0, 3)
-const secondRowSteps = integrationSteps.slice(3, 5)
+const fallbackIntegrationStepsData = siteData.steps
 
-const ctaData = integrationStepsData.cta
-const ctaTitleLines = ctaData.titleLines || []
+const { data: integrationStepsSection } = useAsyncData('integration-steps-section', fetchIntegrationStepsSection, {
+  server: false,
+  default: () => null,
+})
+
+const integrationStepsData = computed(() => {
+  if (!integrationStepsSection.value) {
+    return fallbackIntegrationStepsData
+  }
+
+  const fallbackTitleLines = fallbackIntegrationStepsData.cta?.titleLines || []
+  const incomingTitleLines = integrationStepsSection.value.cta?.titleLines || []
+
+  return {
+    ...fallbackIntegrationStepsData,
+    title: integrationStepsSection.value.title || fallbackIntegrationStepsData.title,
+    subtitle: integrationStepsSection.value.subtitle || fallbackIntegrationStepsData.subtitle,
+    items: integrationStepsSection.value.items.length ? integrationStepsSection.value.items : fallbackIntegrationStepsData.items,
+    cta: {
+      ...fallbackIntegrationStepsData.cta,
+      titleLines: incomingTitleLines.length ? incomingTitleLines : fallbackTitleLines,
+      media: {
+        ...fallbackIntegrationStepsData.cta.media,
+        background: {
+          ...fallbackIntegrationStepsData.cta.media.background,
+          src:
+            integrationStepsSection.value.cta.media.background.src ||
+            fallbackIntegrationStepsData.cta.media.background.src,
+        },
+        image: {
+          ...fallbackIntegrationStepsData.cta.media.image,
+          src:
+            integrationStepsSection.value.cta.media.image.src || fallbackIntegrationStepsData.cta.media.image.src,
+        },
+      },
+    },
+  }
+})
+
+const integrationSteps = computed(() => integrationStepsData.value.items)
+const firstRowSteps = computed(() => integrationSteps.value.slice(0, 3))
+const secondRowSteps = computed(() => integrationSteps.value.slice(3, 5))
+
+const ctaData = computed(() => integrationStepsData.value.cta)
+const ctaTitleLines = computed(() => ctaData.value.titleLines || [])
 </script>
 
 <template>
