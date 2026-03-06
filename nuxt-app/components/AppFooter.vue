@@ -6,13 +6,13 @@
 
         <!-- ЛОГО -->
         <a
-          :href="footerData.meta.brandHref"
+          :href="brandHref"
           class="inline-flex items-center gap-3 text-white"
-          :aria-label="footerData.meta.brandName"
+          :aria-label="brandName"
         >
           <img
-            :src="footerData.media.logo.src"
-            :alt="footerData.media.logo.alt"
+            :src="logoSrc"
+            :alt="logoAlt"
             class="h-[56px] w-auto rounded-full sm:h-[62px] lg:h-[80px]"
             draggable="false"
           />
@@ -20,7 +20,7 @@
           <span
             class="text-[20px] font-semibold leading-none tracking-[-0.02em] sm:text-[24px] lg:text-[26px]"
           >
-            {{ footerData.meta.brandName }}
+            {{ brandName }}
           </span>
         </a>
 
@@ -45,18 +45,31 @@
 </template>
 
 <script setup>
+import { computed } from 'vue'
+import { fetchFooterSection } from '~/data/api'
 import { siteData } from '~/data/siteData'
 
 const footerData = siteData.footer
-
-const navigationColumn = footerData.items.find(
-  (column) => column.slug === 'navigation'
-)
 
 const legalColumn = footerData.items.find(
   (column) => column.slug === 'legal'
 )
 
-const navItems = navigationColumn?.links || []
-const legalItems = legalColumn?.links || []
+const { data: footerSection } = useAsyncData('footer-section', fetchFooterSection, {
+  server: false,
+  default: () => null,
+})
+
+const brandName = computed(() => footerSection.value?.brandName || footerData.meta.brandName)
+const brandHref = computed(() => footerSection.value?.logoLink || footerData.meta.brandHref)
+const logoSrc = computed(() => footerSection.value?.logo || footerData.media.logo.src)
+const logoAlt = computed(() => brandName.value || footerData.media.logo.alt)
+
+const legalItems = computed(() => {
+  if (footerSection.value?.links?.length) {
+    return footerSection.value.links
+  }
+
+  return legalColumn?.links || []
+})
 </script>

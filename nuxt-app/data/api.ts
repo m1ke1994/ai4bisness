@@ -20,6 +20,29 @@ export type HeaderSectionData = {
   }>
 }
 
+type FooterApiLinkItem = {
+  title?: string
+  href?: string
+}
+
+type FooterApiResponse = {
+  brand_name?: string
+  logo?: string | null
+  logo_link?: string
+  links?: FooterApiLinkItem[]
+}
+
+export type FooterSectionData = {
+  brandName: string
+  logo: string
+  logoLink: string
+  links: Array<{
+    id: string
+    label: string
+    href: string
+  }>
+}
+
 const normalizeBaseUrl = (value: string) => value.replace(/\/+$/, '')
 
 const getBackendBaseUrl = () => {
@@ -59,6 +82,35 @@ export const fetchHeaderSection = async (): Promise<HeaderSectionData | null> =>
       logo: normalizeMediaUrl(payload?.logo, baseUrl),
       logoLink: (payload?.logo_link || '/').trim() || '/',
       menuItems,
+    }
+  } catch {
+    return null
+  }
+}
+
+export const fetchFooterSection = async (): Promise<FooterSectionData | null> => {
+  const baseUrl = normalizeBaseUrl(getBackendBaseUrl())
+
+  try {
+    const payload = await $fetch<FooterApiResponse>('/api/footer/', {
+      baseURL: baseUrl,
+    })
+
+    const links = Array.isArray(payload?.links)
+      ? payload.links
+          .map((item, index) => ({
+            id: `footer-link-${index + 1}`,
+            label: (item?.title || '').trim(),
+            href: (item?.href || '').trim(),
+          }))
+          .filter((item) => Boolean(item.label && item.href))
+      : []
+
+    return {
+      brandName: (payload?.brand_name || '').trim(),
+      logo: normalizeMediaUrl(payload?.logo, baseUrl),
+      logoLink: (payload?.logo_link || '/').trim() || '/',
+      links,
     }
   } catch {
     return null
