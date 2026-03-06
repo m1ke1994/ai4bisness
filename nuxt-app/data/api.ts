@@ -69,6 +69,53 @@ export type HeroSectionData = {
   }>
 }
 
+type ReviewsApiActions = {
+  readMore?: string
+  prevPageAria?: string
+  nextPageAria?: string
+  paginationAria?: string
+  paginationGoTo?: string
+  closeModalAria?: string
+}
+
+type ReviewsApiItem = {
+  id?: number | string
+  company?: string
+  person?: string
+  preview_text?: string
+  preview_bullets?: unknown
+  details_text?: string
+  results?: unknown
+}
+
+type ReviewsApiResponse = {
+  title?: string
+  subtitle?: string
+  meta?: {
+    modal_results_title?: string
+    actions?: ReviewsApiActions
+  }
+  items?: ReviewsApiItem[]
+}
+
+export type ReviewsSectionData = {
+  title: string
+  subtitle: string
+  meta: {
+    modalResultsTitle: string
+    actions: ReviewsApiActions
+  }
+  items: Array<{
+    id: string
+    company: string
+    person: string
+    previewText: string
+    previewBullets: string[]
+    detailsText: string
+    results: string[]
+  }>
+}
+
 const normalizeBaseUrl = (value: string) => value.replace(/\/+$/, '')
 
 const getBackendBaseUrl = () => {
@@ -84,6 +131,21 @@ const normalizeMediaUrl = (value: string | null | undefined, baseUrl: string) =>
   if (/^https?:\/\//i.test(value)) return value
   if (value.startsWith('/')) return `${baseUrl}${value}`
   return `${baseUrl}/${value}`
+}
+
+const normalizeTextList = (value: unknown): string[] => {
+  if (!Array.isArray(value)) return []
+
+  return value
+    .map((item) => {
+      if (typeof item === 'string') return item.trim()
+      if (item && typeof item === 'object') {
+        const text = (item as { text?: unknown }).text
+        if (typeof text === 'string') return text.trim()
+      }
+      return ''
+    })
+    .filter(Boolean)
 }
 
 export const fetchHeaderSection = async (): Promise<HeaderSectionData | null> => {
@@ -166,6 +228,47 @@ export const fetchHeroSection = async (): Promise<HeroSectionData | null> => {
       description: (payload?.description || '').trim(),
       image: normalizeMediaUrl(payload?.image, baseUrl),
       statsDisclaimer: (payload?.stats_disclaimer || '').trim(),
+      items,
+    }
+  } catch {
+    return null
+  }
+}
+
+export const fetchReviewsSection = async (): Promise<ReviewsSectionData | null> => {
+  const baseUrl = normalizeBaseUrl(getBackendBaseUrl())
+
+  try {
+    const payload = await $fetch<ReviewsApiResponse>('/api/reviews/', {
+      baseURL: baseUrl,
+    })
+
+    const items = Array.isArray(payload?.items)
+      ? payload.items
+          .map((item, index) => ({
+            id: String(item?.id ?? `review-${index + 1}`),
+            company: (item?.company || '').trim(),
+            person: (item?.person || '').trim(),
+            previewText: (item?.preview_text || '').trim(),
+            previewBullets: normalizeTextList(item?.preview_bullets),
+            detailsText: (item?.details_text || '').trim(),
+            results: normalizeTextList(item?.results),
+          }))
+          .filter(
+            (item) =>
+              Boolean(item.company || item.person || item.previewText || item.detailsText) ||
+              item.previewBullets.length > 0 ||
+              item.results.length > 0,
+          )
+      : []
+
+    return {
+      title: (payload?.title || '').trim(),
+      subtitle: (payload?.subtitle || '').trim(),
+      meta: {
+        modalResultsTitle: (payload?.meta?.modal_results_title || '').trim(),
+        actions: payload?.meta?.actions || {},
+      },
       items,
     }
   } catch {

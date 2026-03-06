@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <section
     id="reviews"
     class="overflow-x-hidden bg-[#020205] py-10 sm:py-12 lg:py-16"
@@ -204,11 +204,83 @@
 
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { fetchReviewsSection } from '~/data/api'
 import { siteData } from '~/data/siteData'
 
-const reviewsData = siteData.reviews
-const reviews = reviewsData.items
-const reviewActions = reviewsData.meta.actions
+const fallbackReviewsData = siteData.reviews
+
+const { data: reviewsSection } = useAsyncData('reviews-section', fetchReviewsSection, {
+  server: false,
+  default: () => null,
+})
+
+const toParagraphItems = (text, prefix) => {
+  const sourceText = (text || '').trim()
+  if (!sourceText) return []
+
+  const parts = sourceText
+    .split(/\n\s*\n/g)
+    .map((part) => part.trim())
+    .filter(Boolean)
+
+  const normalizedParts = parts.length ? parts : [sourceText]
+  return normalizedParts.map((part, index) => ({
+    id: `${prefix}-paragraph-${index + 1}`,
+    text: part,
+  }))
+}
+
+const toTextItems = (items, prefix) => {
+  if (!Array.isArray(items) || !items.length) return []
+  return items.map((text, index) => ({
+    id: `${prefix}-${index + 1}`,
+    text,
+  }))
+}
+
+const reviewsData = computed(() => {
+  if (!reviewsSection.value) {
+    return fallbackReviewsData
+  }
+
+  const mappedItems = reviewsSection.value.items.map((review, index) => {
+    const baseId = review.id || `review-${index + 1}`
+
+    return {
+      id: baseId,
+      slug: baseId,
+      company: review.company,
+      person: review.person,
+      previewParagraphs: toParagraphItems(review.previewText, `${baseId}-preview`),
+      previewBullets: toTextItems(review.previewBullets, `${baseId}-preview-bullet`),
+      detailsParagraphs: toParagraphItems(review.detailsText, `${baseId}-details`),
+      results: toTextItems(review.results, `${baseId}-result`),
+      media: {},
+      meta: {
+        rating: null,
+      },
+    }
+  })
+
+  return {
+    ...fallbackReviewsData,
+    title: reviewsSection.value.title || fallbackReviewsData.title,
+    subtitle: reviewsSection.value.subtitle || fallbackReviewsData.subtitle,
+    items: mappedItems.length ? mappedItems : fallbackReviewsData.items,
+    meta: {
+      ...fallbackReviewsData.meta,
+      modalResultsTitle:
+        reviewsSection.value.meta.modalResultsTitle || fallbackReviewsData.meta.modalResultsTitle,
+      actions: {
+        ...fallbackReviewsData.meta.actions,
+        ...reviewsSection.value.meta.actions,
+      },
+    },
+  }
+})
+
+const reviews = computed(() => reviewsData.value.items)
+const reviewActions = computed(() => reviewsData.value.meta.actions)
 
 const viewportRef = ref(null)
 const trackRef = ref(null)
@@ -230,7 +302,7 @@ let lockedAxis = null
 let resizeObserver = null
 
 const slidesPerView = computed(() => (viewportWidth.value >= 1024 ? 3 : 1))
-const maxStartIndex = computed(() => Math.max(0, reviews.length - slidesPerView.value))
+const maxStartIndex = computed(() => Math.max(0, reviews.value.length - slidesPerView.value))
 const paginationCount = computed(() => maxStartIndex.value + 1)
 const slideWidthPx = computed(() => {
   if (!viewportPx.value || !slidesPerView.value) return 0
