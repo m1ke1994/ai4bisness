@@ -1,0 +1,48 @@
+﻿{% extends "admin/base.html" %}
+{% load i18n %}
+
+{% block title %}{% if subtitle %}{{ subtitle }} | {% endif %}{{ title }} | {{ site_title|default:_('Django site admin') }}{% endblock %}
+
+{% block extrastyle %}
+{{ block.super }}
+<style>
+    #user-tools a.analytics-admin-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 10px;
+        padding: 6px 12px;
+        border: 0;
+        border-radius: 6px;
+        background: #f57c00;
+        color: #ffffff !important;
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: 0.2px;
+        line-height: 1;
+        text-transform: none;
+        text-decoration: none;
+    }
+
+    #user-tools a.analytics-admin-btn:hover,
+    #user-tools a.analytics-admin-btn:focus {
+        background: #e86d00;
+        color: #ffffff !important;
+        text-decoration: none;
+    }
+</style>
+{% endblock %}
+
+{% block branding %}
+<h1 id="site-name"><a href="{% url 'admin:index' %}">{{ site_header|default:_("Django administration") }}</a></h1>
+{% if user.is_anonymous %}
+  {% include "admin/color_theme_toggle.html" %}
+{% endif %}
+{% endblock %}
+
+{% block userlinks %}
+<a href="https://tracknode.ru" target="_blank" rel="noopener noreferrer" class="analytics-admin-btn">Аналитика</a>
+{{ block.super }}
+{% endblock %}
+
+{% block nav-global %}{% endblock %}
