@@ -129,4 +129,15 @@ CSRF_TRUSTED_ORIGINS = env_list(
     default="http://localhost:3000,http://127.0.0.1:3000",
 )
 
+USE_X_FORWARDED_HOST = env_bool("USE_X_FORWARDED_HOST", default=True)
+if env_bool("USE_X_FORWARDED_PROTO", default=True):
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
+CSRF_COOKIE_SECURE = env_bool("CSRF_COOKIE_SECURE", default=not DEBUG)
+SESSION_COOKIE_SECURE = env_bool("SESSION_COOKIE_SECURE", default=not DEBUG)
+SECURE_SSL_REDIRECT = env_bool("SECURE_SSL_REDIRECT", default=False)
+SECURE_HSTS_SECONDS = int(os.getenv("SECURE_HSTS_SECONDS", "0"))
+SECURE_HSTS_INCLUDE_SUBDOMAINS = env_bool("SECURE_HSTS_INCLUDE_SUBDOMAINS", default=False)
+SECURE_HSTS_PRELOAD = env_bool("SECURE_HSTS_PRELOAD", default=False)
+
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"

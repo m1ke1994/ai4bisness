@@ -447,6 +447,23 @@ export type EffectivenessSectionData = {
 const normalizeBaseUrl = (value: string) => value.replace(/\/+$/, '')
 
 const getBackendBaseUrl = () => {
+  try {
+    const runtimeConfig = useRuntimeConfig()
+    const publicApiBase = String(runtimeConfig.public?.apiBase || '').trim()
+    if (publicApiBase) {
+      return normalizeBaseUrl(publicApiBase)
+    }
+
+    if (import.meta.server) {
+      const internalApiBase = String(runtimeConfig.apiInternalBase || '').trim()
+      if (internalApiBase) {
+        return normalizeBaseUrl(internalApiBase)
+      }
+    }
+  } catch {
+    // Runtime config is unavailable outside Nuxt context.
+  }
+
   if (import.meta.client && typeof window !== 'undefined') {
     return `${window.location.protocol}//${window.location.hostname}:8000`
   }
