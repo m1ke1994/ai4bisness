@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     "apps.integration_steps",
     "apps.channels",
     "apps.system_integrations",
+    "apps.subscriptions",
 ]
 
 MIDDLEWARE = [

@@ -1,13 +1,50 @@
 ﻿<script setup>
-
+import { computed } from 'vue'
+import { fetchSubscriptionsSection } from '~/data/api'
 import { siteData } from '~/data/siteData'
 
+const fallbackAiValueData = siteData.aiValue
+const fallbackLaunchData = fallbackAiValueData?.meta?.launch || {}
+const fallbackLaunchMeta = fallbackLaunchData?.meta || {}
 
-const aiValueData = siteData.aiValue
-const launchData = aiValueData.meta.launch
+const { data: subscriptionsSection } = useAsyncData('subscriptions-section', fetchSubscriptionsSection, {
+  server: false,
+  default: () => null,
+})
 
-const valuePoints = aiValueData.items
+const aiValueData = computed(() => {
+  if (!subscriptionsSection.value) {
+    return fallbackAiValueData
+  }
 
+  return {
+    ...fallbackAiValueData,
+    title: subscriptionsSection.value.title || fallbackAiValueData.title,
+    items: subscriptionsSection.value.items.length ? subscriptionsSection.value.items : fallbackAiValueData.items,
+    meta: {
+      ...fallbackAiValueData.meta,
+      subtitlePrefix: subscriptionsSection.value.subtitlePrefix || fallbackAiValueData.meta.subtitlePrefix,
+      subtitleHighlight: subscriptionsSection.value.subtitleHighlight || fallbackAiValueData.meta.subtitleHighlight,
+      launch: {
+        ...fallbackLaunchData,
+        description: subscriptionsSection.value.description || fallbackLaunchData.description,
+        meta: {
+          ...fallbackLaunchMeta,
+          badgePrimary: subscriptionsSection.value.badgePrimary || fallbackLaunchMeta.badgePrimary,
+          badgeSecondary: subscriptionsSection.value.badgeSecondary || fallbackLaunchMeta.badgeSecondary,
+          leftLabel: subscriptionsSection.value.leftLabel || fallbackLaunchMeta.leftLabel,
+          rightLabel: subscriptionsSection.value.rightLabel || fallbackLaunchMeta.rightLabel,
+          paidTitle: subscriptionsSection.value.paidTitle || fallbackLaunchMeta.paidTitle,
+          paidDescription: subscriptionsSection.value.paidDescription || fallbackLaunchMeta.paidDescription,
+          noteDescription: subscriptionsSection.value.noteDescription || fallbackLaunchMeta.noteDescription,
+        },
+      },
+    },
+  }
+})
+
+const launchData = computed(() => aiValueData.value?.meta?.launch || {})
+const valuePoints = computed(() => aiValueData.value?.items || [])
 </script>
 
 <template>
@@ -179,4 +216,5 @@ const valuePoints = aiValueData.items
     </div>
   </section>
 </template>
+
 

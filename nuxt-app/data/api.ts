@@ -347,6 +347,43 @@ export type SystemIntegrationsSectionData = {
   }>
 }
 
+type SubscriptionsApiItem = {
+  text?: string
+}
+
+type SubscriptionsApiResponse = {
+  title?: string
+  subtitle_prefix?: string
+  subtitle_highlight?: string
+  badge_primary?: string
+  badge_secondary?: string
+  description?: string
+  left_label?: string
+  right_label?: string
+  paid_title?: string
+  paid_description?: string
+  note_description?: string
+  items?: SubscriptionsApiItem[]
+}
+
+export type SubscriptionsSectionData = {
+  title: string
+  subtitlePrefix: string
+  subtitleHighlight: string
+  badgePrimary: string
+  badgeSecondary: string
+  description: string
+  leftLabel: string
+  rightLabel: string
+  paidTitle: string
+  paidDescription: string
+  noteDescription: string
+  items: Array<{
+    id: string
+    text: string
+  }>
+}
+
 const normalizeBaseUrl = (value: string) => value.replace(/\/+$/, '')
 
 const getBackendBaseUrl = () => {
@@ -732,6 +769,42 @@ export const fetchSystemIntegrationsSection = async (): Promise<SystemIntegratio
 
     return {
       title: (payload?.title || '').trim(),
+      items,
+    }
+  } catch {
+    return null
+  }
+}
+
+export const fetchSubscriptionsSection = async (): Promise<SubscriptionsSectionData | null> => {
+  const baseUrl = normalizeBaseUrl(getBackendBaseUrl())
+
+  try {
+    const payload = await $fetch<SubscriptionsApiResponse>('/api/subscriptions/', {
+      baseURL: baseUrl,
+    })
+
+    const items = Array.isArray(payload?.items)
+      ? payload.items
+          .map((item, index) => ({
+            id: `ai-value-point-${index + 1}`,
+            text: (item?.text || '').trim(),
+          }))
+          .filter((item) => Boolean(item.text))
+      : []
+
+    return {
+      title: (payload?.title || '').trim(),
+      subtitlePrefix: (payload?.subtitle_prefix || '').trim(),
+      subtitleHighlight: (payload?.subtitle_highlight || '').trim(),
+      badgePrimary: (payload?.badge_primary || '').trim(),
+      badgeSecondary: (payload?.badge_secondary || '').trim(),
+      description: (payload?.description || '').trim(),
+      leftLabel: (payload?.left_label || '').trim(),
+      rightLabel: (payload?.right_label || '').trim(),
+      paidTitle: (payload?.paid_title || '').trim(),
+      paidDescription: (payload?.paid_description || '').trim(),
+      noteDescription: (payload?.note_description || '').trim(),
       items,
     }
   } catch {

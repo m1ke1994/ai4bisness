@@ -14,6 +14,7 @@ urlpatterns = [
     path("api/", include("apps.integration_steps.urls")),
     path("api/", include("apps.channels.urls")),
     path("api/", include("apps.system_integrations.urls")),
+    path("api/", include("apps.subscriptions.urls")),
 ]
 
 if settings.DEBUG:
