@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     "apps.channels",
     "apps.system_integrations",
     "apps.subscriptions",
+    "apps.effectiveness",
 ]
 
 MIDDLEWARE = [

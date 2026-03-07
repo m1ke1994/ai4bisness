@@ -384,6 +384,66 @@ export type SubscriptionsSectionData = {
   }>
 }
 
+type EffectivenessApiTrainingItem = {
+  title?: string
+}
+
+type EffectivenessApiCompareItem = {
+  title?: string
+  ai_description?: string
+  human_description?: string
+}
+
+type EffectivenessApiResponse = {
+  training?: {
+    title?: string
+    right_pill?: string
+    right_title?: string
+    items?: EffectivenessApiTrainingItem[]
+  }
+  summary?: {
+    subtitle?: string
+    title?: string
+    desktop_stage_label?: string
+    desktop_ai_label?: string
+    desktop_human_label?: string
+    mobile_ai_label?: string
+    mobile_human_label?: string
+    stage_description_label?: string
+    desktop_footer?: string
+    items?: EffectivenessApiCompareItem[]
+  }
+}
+
+export type EffectivenessSectionData = {
+  training: {
+    title: string
+    rightPill: string
+    rightTitle: string
+    items: Array<{
+      id: string
+      title: string
+    }>
+  }
+  summary: {
+    subtitle: string
+    title: string
+    desktopStageLabel: string
+    desktopAiLabel: string
+    desktopHumanLabel: string
+    mobileAiLabel: string
+    mobileHumanLabel: string
+    stageDescriptionLabel: string
+    desktopFooter: string
+    items: Array<{
+      id: string
+      title: string
+      aiDescription: string
+      humanDescription: string
+    }>
+  }
+}
+
 const normalizeBaseUrl = (value: string) => value.replace(/\/+$/, '')
 
 const getBackendBaseUrl = () => {
@@ -806,6 +866,59 @@ export const fetchSubscriptionsSection = async (): Promise<SubscriptionsSectionD
       paidDescription: (payload?.paid_description || '').trim(),
       noteDescription: (payload?.note_description || '').trim(),
       items,
+    }
+  } catch {
+    return null
+  }
+}
+
+export const fetchEffectivenessSection = async (): Promise<EffectivenessSectionData | null> => {
+  const baseUrl = normalizeBaseUrl(getBackendBaseUrl())
+
+  try {
+    const payload = await $fetch<EffectivenessApiResponse>('/api/effectiveness/', {
+      baseURL: baseUrl,
+    })
+
+    const trainingItems = Array.isArray(payload?.training?.items)
+      ? payload.training.items
+          .map((item, index) => ({
+            id: `training-source-${index + 1}`,
+            title: (item?.title || '').trim(),
+          }))
+          .filter((item) => Boolean(item.title))
+      : []
+
+    const compareItems = Array.isArray(payload?.summary?.items)
+      ? payload.summary.items
+          .map((item, index) => ({
+            id: `advantage-row-${index + 1}`,
+            title: (item?.title || '').trim(),
+            aiDescription: (item?.ai_description || '').trim(),
+            humanDescription: (item?.human_description || '').trim(),
+          }))
+          .filter((item) => Boolean(item.title || item.aiDescription || item.humanDescription))
+      : []
+
+    return {
+      training: {
+        title: (payload?.training?.title || '').trim(),
+        rightPill: (payload?.training?.right_pill || '').trim(),
+        rightTitle: (payload?.training?.right_title || '').trim(),
+        items: trainingItems,
+      },
+      summary: {
+        subtitle: (payload?.summary?.subtitle || '').trim(),
+        title: (payload?.summary?.title || '').trim(),
+        desktopStageLabel: (payload?.summary?.desktop_stage_label || '').trim(),
+        desktopAiLabel: (payload?.summary?.desktop_ai_label || '').trim(),
+        desktopHumanLabel: (payload?.summary?.desktop_human_label || '').trim(),
+        mobileAiLabel: (payload?.summary?.mobile_ai_label || '').trim(),
+        mobileHumanLabel: (payload?.summary?.mobile_human_label || '').trim(),
+        stageDescriptionLabel: (payload?.summary?.stage_description_label || '').trim(),
+        desktopFooter: (payload?.summary?.desktop_footer || '').trim(),
+        items: compareItems,
+      },
     }
   } catch {
     return null

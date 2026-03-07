@@ -1,20 +1,76 @@
 ﻿<script setup>
 import { computed } from 'vue'
+import { fetchEffectivenessSection } from '~/data/api'
 import { siteData } from '~/data/siteData'
 import Social_Media from '~/components/Social_Media.vue'
 import IntegrationsAnalyticsSection from '~/components/IntegrationsAnalyticsSection.vue'
 
-const advantagesData = siteData.advantages
-const trainingData = advantagesData.meta.training
-const summaryData = advantagesData.meta.summary
-const compareRows = advantagesData.items
-const checkIcon = advantagesData.media.icon.src
+const fallbackAdvantagesData = siteData.advantages
+const fallbackTrainingData = fallbackAdvantagesData?.meta?.training || {}
+const fallbackTrainingMeta = fallbackTrainingData?.meta || {}
+const fallbackSummaryData = fallbackAdvantagesData?.meta?.summary || {}
+const fallbackSummaryMeta = fallbackSummaryData?.meta || {}
+
+const { data: effectivenessSection } = useAsyncData('effectiveness-section', fetchEffectivenessSection, {
+  server: false,
+  default: () => null,
+})
+
+const advantagesData = computed(() => {
+  if (!effectivenessSection.value) {
+    return fallbackAdvantagesData
+  }
+
+  const apiTraining = effectivenessSection.value.training
+  const apiSummary = effectivenessSection.value.summary
+
+  return {
+    ...fallbackAdvantagesData,
+    items: apiSummary.items.length ? apiSummary.items : fallbackAdvantagesData.items,
+    meta: {
+      ...fallbackAdvantagesData.meta,
+      training: {
+        ...fallbackTrainingData,
+        title: apiTraining.title || fallbackTrainingData.title,
+        items: apiTraining.items.length ? apiTraining.items : (fallbackTrainingData.items || []),
+        meta: {
+          ...fallbackTrainingMeta,
+          rightPill: apiTraining.rightPill || fallbackTrainingMeta.rightPill,
+          rightTitle: apiTraining.rightTitle || fallbackTrainingMeta.rightTitle,
+        },
+      },
+      summary: {
+        ...fallbackSummaryData,
+        subtitle: apiSummary.subtitle || fallbackSummaryData.subtitle,
+        title: apiSummary.title || fallbackSummaryData.title,
+        meta: {
+          ...fallbackSummaryMeta,
+          desktopStageLabel: apiSummary.desktopStageLabel || fallbackSummaryMeta.desktopStageLabel,
+          desktopAiLabel: apiSummary.desktopAiLabel || fallbackSummaryMeta.desktopAiLabel,
+          desktopHumanLabel: apiSummary.desktopHumanLabel || fallbackSummaryMeta.desktopHumanLabel,
+          mobileAiLabel: apiSummary.mobileAiLabel || fallbackSummaryMeta.mobileAiLabel,
+          mobileHumanLabel: apiSummary.mobileHumanLabel || fallbackSummaryMeta.mobileHumanLabel,
+          stageDescriptionLabel: apiSummary.stageDescriptionLabel || fallbackSummaryMeta.stageDescriptionLabel,
+          desktopFooter: apiSummary.desktopFooter || fallbackSummaryMeta.desktopFooter,
+        },
+      },
+    },
+  }
+})
+
+const trainingData = computed(() => advantagesData.value?.meta?.training || {})
+const summaryData = computed(() => advantagesData.value?.meta?.summary || {})
+const compareRows = computed(() => advantagesData.value?.items || [])
+const checkIcon = computed(() => advantagesData.value?.media?.icon?.src || '')
 
 const trainingRows = computed(() => {
   const rows = []
-  for (let index = 0; index < trainingData.items.length; index += 2) {
-    rows.push(trainingData.items.slice(index, index + 2))
+  const items = trainingData.value?.items || []
+
+  for (let index = 0; index < items.length; index += 2) {
+    rows.push(items.slice(index, index + 2))
   }
+
   return rows
 })
 </script>
@@ -346,4 +402,3 @@ radial-gradient(1200px 320px at 50% 0%, rgba(75,57,255,0.06), transparent 60%),
 radial-gradient(900px 280px at 85% 70%, rgba(138,125,255,0.06), transparent 62%);
 }
 </style>
-
