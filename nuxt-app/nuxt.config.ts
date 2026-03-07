@@ -14,6 +14,7 @@ export default defineNuxtConfig({
   runtimeConfig: {
     apiInternalBase: process.env.NUXT_INTERNAL_API_BASE || 'http://backend:8000',
     public: {
+      siteUrl: process.env.NUXT_PUBLIC_SITE_URL || '',
       apiBase: process.env.NUXT_PUBLIC_API_BASE || '',
       tracknodeApiKey: process.env.NUXT_PUBLIC_TRACKNODE_API_KEY || '',
       tracknodeTrackerSrc:

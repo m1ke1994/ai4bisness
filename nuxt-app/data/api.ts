@@ -454,6 +454,11 @@ const getBackendBaseUrl = () => {
       return normalizeBaseUrl(publicApiBase)
     }
 
+    const siteUrl = String(runtimeConfig.public?.siteUrl || '').trim()
+    if (siteUrl) {
+      return normalizeBaseUrl(siteUrl)
+    }
+
     if (import.meta.server) {
       const internalApiBase = String(runtimeConfig.apiInternalBase || '').trim()
       if (internalApiBase) {
@@ -465,7 +470,7 @@ const getBackendBaseUrl = () => {
   }
 
   if (import.meta.client && typeof window !== 'undefined') {
-    return `${window.location.protocol}//${window.location.hostname}:8000`
+    return window.location.origin
   }
 
   return 'http://backend:8000'

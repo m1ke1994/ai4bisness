@@ -1,38 +1,20 @@
-services:
-  db:
-    image: postgres:16-alpine
-    restart: unless-stopped
-    environment:
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
-
+﻿services:
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
     restart: unless-stopped
-    depends_on:
-      db:
-        condition: service_healthy
     environment:
       DEBUG: ${DJANGO_DEBUG}
       SECRET_KEY: ${DJANGO_SECRET_KEY}
       ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS}
-      DB_NAME: ${POSTGRES_DB}
-      DB_USER: ${POSTGRES_USER}
-      DB_PASSWORD: ${POSTGRES_PASSWORD}
-      DB_HOST: db
-      DB_PORT: "5432"
+      DATABASE_URL: ${DJANGO_DATABASE_URL}
       CORS_ALLOWED_ORIGINS: ${DJANGO_CORS_ALLOWED_ORIGINS}
       CSRF_TRUSTED_ORIGINS: ${DJANGO_CSRF_TRUSTED_ORIGINS}
+      STATIC_URL: ${DJANGO_STATIC_URL}
+      STATIC_ROOT: ${DJANGO_STATIC_ROOT}
+      MEDIA_URL: ${DJANGO_MEDIA_URL}
+      MEDIA_ROOT: ${DJANGO_MEDIA_ROOT}
       USE_X_FORWARDED_HOST: ${DJANGO_USE_X_FORWARDED_HOST}
       USE_X_FORWARDED_PROTO: ${DJANGO_USE_X_FORWARDED_PROTO}
       CSRF_COOKIE_SECURE: ${DJANGO_CSRF_COOKIE_SECURE}
@@ -61,10 +43,11 @@ services:
     depends_on:
       - backend
     environment:
-      NUXT_PUBLIC_TRACKNODE_API_KEY: ${NUXT_PUBLIC_TRACKNODE_API_KEY}
-      NUXT_PUBLIC_TRACKNODE_TRACKER_SRC: ${NUXT_PUBLIC_TRACKNODE_TRACKER_SRC}
+      NUXT_PUBLIC_SITE_URL: ${NUXT_PUBLIC_SITE_URL}
       NUXT_PUBLIC_API_BASE: ${NUXT_PUBLIC_API_BASE}
       NUXT_INTERNAL_API_BASE: ${NUXT_INTERNAL_API_BASE}
+      NUXT_PUBLIC_TRACKNODE_API_KEY: ${NUXT_PUBLIC_TRACKNODE_API_KEY}
+      NUXT_PUBLIC_TRACKNODE_TRACKER_SRC: ${NUXT_PUBLIC_TRACKNODE_TRACKER_SRC}
     expose:
       - "3000"
 
@@ -82,6 +65,5 @@ services:
       - media_data:/var/www/media:ro
 
 volumes:
-  postgres_data:
   static_data:
   media_data:

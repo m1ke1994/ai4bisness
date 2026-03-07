@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+from urllib.parse import parse_qs, unquote, urlparse
 
 from dotenv import load_dotenv
 
@@ -19,9 +20,44 @@ def env_list(name: str, default: str = "") -> list[str]:
     return [item.strip() for item in value.split(",") if item.strip()]
 
 
+def database_from_url(url: str) -> dict:
+    parsed = urlparse(url)
+    scheme = parsed.scheme.lower()
+
+    if scheme in {"postgres", "postgresql", "pgsql"}:
+        config = {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": parsed.path.lstrip("/"),
+            "USER": unquote(parsed.username or ""),
+            "PASSWORD": unquote(parsed.password or ""),
+            "HOST": parsed.hostname or "",
+            "PORT": str(parsed.port or 5432),
+        }
+
+        query = parse_qs(parsed.query)
+        sslmode = query.get("sslmode", [None])[-1]
+        if sslmode:
+            config["OPTIONS"] = {"sslmode": sslmode}
+
+        return config
+
+    if scheme == "sqlite":
+        db_path = parsed.path or ""
+        if db_path in {"", "/:memory:"}:
+            db_name = ":memory:"
+        else:
+            db_name = db_path
+        return {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": db_name,
+        }
+
+    raise ValueError(f"Unsupported DATABASE_URL scheme: {scheme}")
+
+
 SECRET_KEY = os.getenv("SECRET_KEY", "change-me")
-DEBUG = env_bool("DEBUG", default=True)
-ALLOWED_HOSTS = env_list("ALLOWED_HOSTS", default="localhost,127.0.0.1")
+DEBUG = env_bool("DEBUG", default=False)
+ALLOWED_HOSTS = env_list("ALLOWED_HOSTS", default="ai4businesss.com,www.ai4businesss.com,85.239.60.185")
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -77,7 +113,13 @@ WSGI_APPLICATION = "config.wsgi.application"
 ASGI_APPLICATION = "config.asgi.application"
 
 DB_NAME = os.getenv("DB_NAME")
-if DB_NAME:
+DATABASE_URL = os.getenv("DATABASE_URL", "").strip()
+
+if DATABASE_URL:
+    DATABASES = {
+        "default": database_from_url(DATABASE_URL),
+    }
+elif DB_NAME:
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.postgresql",
@@ -108,11 +150,11 @@ TIME_ZONE = "Europe/Moscow"
 USE_I18N = True
 USE_TZ = True
 
-STATIC_URL = "/static/"
-STATIC_ROOT = BASE_DIR / "staticfiles"
+STATIC_URL = os.getenv("STATIC_URL", "/static/")
+STATIC_ROOT = Path(os.getenv("STATIC_ROOT", str(BASE_DIR / "staticfiles")))
 
-MEDIA_URL = "/media/"
-MEDIA_ROOT = BASE_DIR / "media"
+MEDIA_URL = os.getenv("MEDIA_URL", "/media/")
+MEDIA_ROOT = Path(os.getenv("MEDIA_ROOT", str(BASE_DIR / "media")))
 
 REST_FRAMEWORK = {
     "DEFAULT_RENDERER_CLASSES": ("rest_framework.renderers.JSONRenderer",),
@@ -122,11 +164,11 @@ REST_FRAMEWORK = {
 
 CORS_ALLOWED_ORIGINS = env_list(
     "CORS_ALLOWED_ORIGINS",
-    default="http://localhost:3000,http://127.0.0.1:3000",
+    default="https://ai4businesss.com,https://www.ai4businesss.com,http://ai4businesss.com,http://www.ai4businesss.com,http://85.239.60.185,https://85.239.60.185",
 )
 CSRF_TRUSTED_ORIGINS = env_list(
     "CSRF_TRUSTED_ORIGINS",
-    default="http://localhost:3000,http://127.0.0.1:3000",
+    default="https://ai4businesss.com,https://www.ai4businesss.com,http://ai4businesss.com,http://www.ai4businesss.com,http://85.239.60.185,https://85.239.60.185",
 )
 
 USE_X_FORWARDED_HOST = env_bool("USE_X_FORWARDED_HOST", default=True)
