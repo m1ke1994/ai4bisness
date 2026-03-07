@@ -321,6 +321,32 @@ export type IntegrationStepsSectionData = {
   }
 }
 
+type SystemIntegrationsApiItem = {
+  title?: string
+  description?: string
+  image?: string | null
+}
+
+type SystemIntegrationsApiResponse = {
+  title?: string
+  items?: SystemIntegrationsApiItem[]
+}
+
+export type SystemIntegrationsSectionData = {
+  title: string
+  items: Array<{
+    id: string
+    title: string
+    description: string
+    media: {
+      image: {
+        src: string
+        alt: string
+      }
+    }
+  }>
+}
+
 const normalizeBaseUrl = (value: string) => value.replace(/\/+$/, '')
 
 const getBackendBaseUrl = () => {
@@ -674,6 +700,39 @@ export const fetchIntegrationStepsSection = async (): Promise<IntegrationStepsSe
           },
         },
       },
+    }
+  } catch {
+    return null
+  }
+}
+
+export const fetchSystemIntegrationsSection = async (): Promise<SystemIntegrationsSectionData | null> => {
+  const baseUrl = normalizeBaseUrl(getBackendBaseUrl())
+
+  try {
+    const payload = await $fetch<SystemIntegrationsApiResponse>('/api/system-integrations/', {
+      baseURL: baseUrl,
+    })
+
+    const items = Array.isArray(payload?.items)
+      ? payload.items
+          .map((item, index) => ({
+            id: `integration-row-${index + 1}`,
+            title: (item?.title || '').trim(),
+            description: (item?.description || '').trim(),
+            media: {
+              image: {
+                src: normalizeMediaUrl(item?.image, baseUrl),
+                alt: (item?.title || '').trim(),
+              },
+            },
+          }))
+          .filter((item) => Boolean(item.title || item.description || item.media.image.src))
+      : []
+
+    return {
+      title: (payload?.title || '').trim(),
+      items,
     }
   } catch {
     return null

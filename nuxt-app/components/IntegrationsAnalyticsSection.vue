@@ -1,8 +1,29 @@
 ﻿<script setup>
 import { computed } from 'vue'
+import { fetchSystemIntegrationsSection } from '~/data/api'
 import { siteData } from '~/data/siteData'
 
-const integrationsData = computed(() => siteData?.aiValue?.meta?.integrations || {})
+const fallbackIntegrationsData = siteData?.aiValue?.meta?.integrations || {}
+
+const { data: integrationsSection } = useAsyncData('system-integrations-section', fetchSystemIntegrationsSection, {
+  server: false,
+  default: () => null,
+})
+
+const integrationsData = computed(() => {
+  if (!integrationsSection.value) {
+    return fallbackIntegrationsData
+  }
+
+  return {
+    ...fallbackIntegrationsData,
+    title: integrationsSection.value.title || fallbackIntegrationsData.title || '',
+    items: integrationsSection.value.items.length
+      ? integrationsSection.value.items
+      : (fallbackIntegrationsData.items || []),
+  }
+})
+
 const integrationsRows = computed(() => integrationsData.value?.items || [])
 
 const getRowImageSrc = (row) => {
