@@ -444,7 +444,54 @@ export type EffectivenessSectionData = {
   }
 }
 
+type FooterPageApiResponse = {
+  key?: string
+  slug?: string
+  title?: string
+  content?: string
+}
+
+export type FooterPageData = {
+  key: string
+  slug: string
+  title: string
+  content: string
+}
+
 const normalizeBaseUrl = (value: string) => value.replace(/\/+$/, '')
+
+const getFooterPagesApiBaseUrl = () => {
+  try {
+    const runtimeConfig = useRuntimeConfig()
+    const publicApiBase = String(runtimeConfig.public?.apiBase || '').trim()
+    const siteUrl = String(runtimeConfig.public?.siteUrl || '').trim()
+    const internalApiBase = String(runtimeConfig.apiInternalBase || '').trim()
+
+    if (import.meta.server && internalApiBase) {
+      return normalizeBaseUrl(internalApiBase)
+    }
+
+    if (publicApiBase) {
+      return normalizeBaseUrl(publicApiBase)
+    }
+
+    if (siteUrl) {
+      return normalizeBaseUrl(siteUrl)
+    }
+
+    if (internalApiBase) {
+      return normalizeBaseUrl(internalApiBase)
+    }
+  } catch {
+    // Runtime config is unavailable outside Nuxt context.
+  }
+
+  if (import.meta.client && typeof window !== 'undefined') {
+    return window.location.origin
+  }
+
+  return 'http://backend:8000'
+}
 
 const getBackendBaseUrl = () => {
   try {
@@ -549,6 +596,41 @@ export const fetchFooterSection = async (): Promise<FooterSectionData | null> =>
       logo: normalizeMediaUrl(payload?.logo, baseUrl),
       logoLink: (payload?.logo_link || '/').trim() || '/',
       links,
+    }
+  } catch {
+    return null
+  }
+}
+
+export const fetchFooterPageBySlug = async (slug: string): Promise<FooterPageData | null> => {
+  const normalizedSlug = (slug || '').trim()
+  if (!normalizedSlug) {
+    return null
+  }
+
+  const baseUrl = getFooterPagesApiBaseUrl()
+
+  try {
+    const payload = await $fetch<FooterPageApiResponse>(
+      `/api/footer-pages/${encodeURIComponent(normalizedSlug)}/`,
+      {
+        baseURL: baseUrl,
+      },
+    )
+
+    const key = (payload?.key || '').trim()
+    const responseSlug = (payload?.slug || '').trim()
+    const title = (payload?.title || '').trim()
+
+    if (!key || !responseSlug || !title) {
+      return null
+    }
+
+    return {
+      key,
+      slug: responseSlug,
+      title,
+      content: (payload?.content || '').trim(),
     }
   } catch {
     return null

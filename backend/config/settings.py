@@ -70,6 +70,7 @@ INSTALLED_APPS = [
     "rest_framework",
     "apps.core",
     "apps.footer",
+    "apps.footer_pages.apps.FooterPagesConfig",
     "apps.heroblock",
     "apps.pricing",
     "apps.reviews",
