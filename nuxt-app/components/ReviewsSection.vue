@@ -332,9 +332,15 @@ const resetDragState = () => {
   lockedAxis = null
 }
 
+const isInteractiveTarget = (target) => {
+  if (!(target instanceof Element)) return false
+  return Boolean(target.closest('button, a, input, textarea, select, label, [role="button"], [role="link"]'))
+}
+
 const onPointerDown = (event) => {
   if (activeReview.value || maxStartIndex.value === 0) return
   if (event.pointerType === 'mouse' && event.button !== 0) return
+  if (isInteractiveTarget(event.target)) return
 
   pointerId = event.pointerId
   startX = event.clientX
