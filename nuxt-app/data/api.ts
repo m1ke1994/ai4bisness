@@ -460,6 +460,7 @@ export type FooterPageData = {
 
 const normalizeBaseUrl = (value: string) => value.replace(/\/+$/, '')
 
+<<<<<<< HEAD
 const getFooterPagesApiBaseUrls = () => {
   const candidates: string[] = []
 
@@ -475,6 +476,9 @@ const getFooterPagesApiBaseUrls = () => {
     }
   }
 
+=======
+const getFooterPagesApiBaseUrl = () => {
+>>>>>>> 2cbe506af13f3406f4dd92a1f2823035cc7b6772
   try {
     const runtimeConfig = useRuntimeConfig()
     const publicApiBase = String(runtimeConfig.public?.apiBase || '').trim()
@@ -482,17 +486,35 @@ const getFooterPagesApiBaseUrls = () => {
     const internalApiBase = String(runtimeConfig.apiInternalBase || '').trim()
 
     if (import.meta.server && internalApiBase) {
+<<<<<<< HEAD
       pushCandidate(internalApiBase)
     }
 
     pushCandidate(publicApiBase)
     pushCandidate(siteUrl)
     pushCandidate(internalApiBase)
+=======
+      return normalizeBaseUrl(internalApiBase)
+    }
+
+    if (publicApiBase) {
+      return normalizeBaseUrl(publicApiBase)
+    }
+
+    if (siteUrl) {
+      return normalizeBaseUrl(siteUrl)
+    }
+
+    if (internalApiBase) {
+      return normalizeBaseUrl(internalApiBase)
+    }
+>>>>>>> 2cbe506af13f3406f4dd92a1f2823035cc7b6772
   } catch {
     // Runtime config is unavailable outside Nuxt context.
   }
 
   if (import.meta.client && typeof window !== 'undefined') {
+<<<<<<< HEAD
     pushCandidate(window.location.origin)
   }
 
@@ -520,6 +542,12 @@ const buildFooterPageEndpoints = (slug: string, baseUrl: string) => {
   }
 
   return [apiPath, plainPath]
+=======
+    return window.location.origin
+  }
+
+  return 'http://backend:8000'
+>>>>>>> 2cbe506af13f3406f4dd92a1f2823035cc7b6772
 }
 
 const getBackendBaseUrl = () => {
@@ -637,6 +665,7 @@ export const fetchFooterPageBySlug = async (slug: string): Promise<FooterPageDat
     return null
   }
 
+<<<<<<< HEAD
   const baseUrls = getFooterPagesApiBaseUrls()
 
   for (const baseUrl of baseUrls) {
@@ -669,6 +698,35 @@ export const fetchFooterPageBySlug = async (slug: string): Promise<FooterPageDat
   }
 
   return null
+=======
+  const baseUrl = getFooterPagesApiBaseUrl()
+
+  try {
+    const payload = await $fetch<FooterPageApiResponse>(
+      `/api/footer-pages/${encodeURIComponent(normalizedSlug)}/`,
+      {
+        baseURL: baseUrl,
+      },
+    )
+
+    const key = (payload?.key || '').trim()
+    const responseSlug = (payload?.slug || '').trim()
+    const title = (payload?.title || '').trim()
+
+    if (!key || !responseSlug || !title) {
+      return null
+    }
+
+    return {
+      key,
+      slug: responseSlug,
+      title,
+      content: (payload?.content || '').trim(),
+    }
+  } catch {
+    return null
+  }
+>>>>>>> 2cbe506af13f3406f4dd92a1f2823035cc7b6772
 }
 
 export const fetchHeroSection = async (): Promise<HeroSectionData | null> => {
