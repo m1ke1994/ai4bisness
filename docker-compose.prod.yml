@@ -1,3 +1,11 @@
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+=======
+﻿version: "3.9"
+
+>>>>>>> 2cbe506af13f3406f4dd92a1f2823035cc7b6772
+>>>>>>> 01c2954498212894780bf3e7930b723f73df20ad
 services:
   db:
     image: postgres:16-alpine

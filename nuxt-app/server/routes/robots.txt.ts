@@ -28,6 +28,9 @@ export default defineEventHandler((event) => {
   ].join('\n')
 
   setHeader(event, 'Content-Type', 'text/plain; charset=utf-8')
+<<<<<<< HEAD
   setHeader(event, 'Cache-Control', 'public, max-age=0, s-maxage=3600, stale-while-revalidate=86400')
+=======
+>>>>>>> 01c2954498212894780bf3e7930b723f73df20ad
   return robotsText
 })
