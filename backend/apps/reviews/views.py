@@ -1,3 +1,5 @@
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import cache_page
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -5,6 +7,7 @@ from apps.reviews.models import ReviewsSection
 from apps.reviews.serializers import ReviewsSectionSerializer
 
 
+@method_decorator(cache_page(300), name="dispatch")
 class ReviewsAPIView(APIView):
     permission_classes = []
     authentication_classes = []

@@ -22,7 +22,6 @@ const fallbackNavItems = [
 ].filter(Boolean)
 
 const { data: headerData } = useAsyncData('header-section', fetchHeaderSection, {
-  server: false,
   default: () => null,
 })
 
@@ -235,6 +234,8 @@ onBeforeUnmount(() => {
             :src="logoSrc"
             :alt="brandName"
             class="h-[100px] w-auto rounded-full sm:h-[100px] lg:h-[120px] xl:h-[128px]"
+            loading="eager"
+            decoding="async"
             draggable="false"
           />
           <span class="text-[20px] font-semibold leading-none tracking-[-0.02em] sm:text-[24px] lg:text-[26px]">
@@ -336,6 +337,8 @@ onBeforeUnmount(() => {
                 :src="logoSrc"
                 :alt="brandName"
                 class="h-14 w-auto rounded-full"
+                loading="eager"
+                decoding="async"
                 draggable="false"
               />
               <span class="text-[20px] font-semibold leading-none tracking-[-0.02em]">
@@ -389,7 +392,13 @@ onBeforeUnmount(() => {
                 class="inline-flex h-11 w-11 items-center justify-center rounded-full bg-[#6A5EFD] text-black shadow-[0_10px_24px_rgba(106,94,253,0.35)]"
                 @click.prevent
               >
-                <img :src="item.icon.src" :alt="item.icon.alt" class="h-[18px] w-[18px] object-contain" />
+                <img
+                  :src="item.icon.src"
+                  :alt="item.icon.alt"
+                  class="h-[18px] w-[18px] object-contain"
+                  loading="lazy"
+                  decoding="async"
+                />
               </a>
             </div>
           </div>
@@ -398,4 +407,3 @@ onBeforeUnmount(() => {
     </Transition>
   </Teleport>
 </template>
-

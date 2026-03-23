@@ -8,6 +8,8 @@
       alt=""
       aria-hidden="true"
       class="pointer-events-none absolute inset-0 h-full w-full object-cover"
+      loading="lazy"
+      decoding="async"
       draggable="false"
     />
 
@@ -71,6 +73,8 @@
                 alt=""
                 aria-hidden="true"
                 class="absolute inset-0 h-full w-full object-cover"
+                loading="lazy"
+                decoding="async"
               />
 
               <div
@@ -122,6 +126,8 @@
                         :src="item.icon"
                         :alt="item.name"
                         class="h-6 w-6 object-contain"
+                        loading="lazy"
+                        decoding="async"
                       />
                     </div>
 
@@ -167,7 +173,6 @@ const fallbackSocialMedia = [
 ]
 
 const { data: contactsSection } = useAsyncData('contacts-section', fetchContactsSection, {
-  server: false,
   default: () => null,
 })
 

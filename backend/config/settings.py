@@ -57,7 +57,7 @@ def database_from_url(url: str) -> dict:
 
 SECRET_KEY = os.getenv("SECRET_KEY", "change-me")
 DEBUG = env_bool("DEBUG", default=False)
-ALLOWED_HOSTS = env_list("ALLOWED_HOSTS", default="ai4businesss.com,www.ai4businesss.com,85.239.60.185")
+ALLOWED_HOSTS = env_list("ALLOWED_HOSTS", default="ai4businesss.com,www.ai4businesss.com,82.97.252.28")
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -70,6 +70,7 @@ INSTALLED_APPS = [
     "rest_framework",
     "apps.core",
     "apps.footer",
+    "apps.footer_pages.apps.FooterPagesConfig",
     "apps.heroblock",
     "apps.pricing",
     "apps.reviews",
@@ -162,13 +163,21 @@ REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.AllowAny",),
 }
 
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "LOCATION": "ai4business-cache",
+        "TIMEOUT": int(os.getenv("CACHE_DEFAULT_TIMEOUT", "300")),
+    }
+}
+
 CORS_ALLOWED_ORIGINS = env_list(
     "CORS_ALLOWED_ORIGINS",
-    default="https://ai4businesss.com,https://www.ai4businesss.com,http://ai4businesss.com,http://www.ai4businesss.com,http://85.239.60.185,https://85.239.60.185",
+    default="https://ai4businesss.com,https://www.ai4businesss.com,http://ai4businesss.com,http://www.ai4businesss.com,http://82.97.252.28,https://82.97.252.28",
 )
 CSRF_TRUSTED_ORIGINS = env_list(
     "CSRF_TRUSTED_ORIGINS",
-    default="https://ai4businesss.com,https://www.ai4businesss.com,http://ai4businesss.com,http://www.ai4businesss.com,http://85.239.60.185,https://85.239.60.185",
+    default="https://ai4businesss.com,https://www.ai4businesss.com,http://ai4businesss.com,http://www.ai4businesss.com,http://82.97.252.28,https://82.97.252.28",
 )
 
 USE_X_FORWARDED_HOST = env_bool("USE_X_FORWARDED_HOST", default=True)

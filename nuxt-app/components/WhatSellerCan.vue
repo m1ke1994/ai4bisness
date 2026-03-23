@@ -12,7 +12,6 @@ const fallbackSummaryData = fallbackAdvantagesData?.meta?.summary || {}
 const fallbackSummaryMeta = fallbackSummaryData?.meta || {}
 
 const { data: effectivenessSection } = useAsyncData('effectiveness-section', fetchEffectivenessSection, {
-  server: false,
   default: () => null,
 })
 

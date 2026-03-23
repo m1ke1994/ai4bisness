@@ -12,12 +12,32 @@ export default defineNuxtPlugin(() => {
   const SCRIPT_ID = 'tracknode-tracker'
   if (document.getElementById(SCRIPT_ID)) return
 
-  const s = document.createElement('script')
-  s.id = SCRIPT_ID
-  s.src = src
-  s.async = true
-  s.defer = true
-  s.setAttribute('data-api-key', apiKey)
+  const loadTracker = () => {
+    if (document.getElementById(SCRIPT_ID)) return
 
-  document.head.appendChild(s)
+    const s = document.createElement('script')
+    s.id = SCRIPT_ID
+    s.src = src
+    s.async = true
+    s.defer = true
+    s.setAttribute('data-api-key', apiKey)
+
+    document.head.appendChild(s)
+  }
+
+  const scheduleLoad = () => {
+    if ('requestIdleCallback' in window) {
+      window.requestIdleCallback(loadTracker, { timeout: 2000 })
+      return
+    }
+
+    window.setTimeout(loadTracker, 1200)
+  }
+
+  if (document.readyState === 'complete') {
+    scheduleLoad()
+    return
+  }
+
+  window.addEventListener('load', scheduleLoad, { once: true })
 })

@@ -6,7 +6,6 @@ import { siteData } from '~/data/siteData'
 const fallbackHeroData = siteData.hero
 
 const { data: heroSection } = useAsyncData('hero-section', fetchHeroSection, {
-  server: false,
   default: () => null,
 })
 
@@ -69,6 +68,8 @@ const stats = computed(() => heroData.value.items)
       alt=""
       aria-hidden="true"
       class="pointer-events-none absolute bottom-[-250px] left-1/2 z-[1] w-[88%] min-w-[620px] -translate-x-1/2 select-none opacity-5 sm:min-w-[760px]"
+      loading="lazy"
+      decoding="async"
       draggable="false"
     />
 
@@ -78,6 +79,9 @@ const stats = computed(() => heroData.value.items)
       :alt="heroData.media.image.alt"
       :style="hiroDesktopImageVars"
       class="pointer-events-none absolute right-[var(--hiro-desktop-right)] bottom-[var(--hiro-desktop-bottom)] z-[5] hidden w-[var(--hiro-desktop-w)] max-w-full object-contain select-none lg:block xl:w-[var(--hiro-desktop-w-xl)] xl:max-w-none 2xl:w-[var(--hiro-desktop-w-2xl)]"
+      loading="eager"
+      decoding="async"
+      fetchpriority="high"
       draggable="false"
     />
 
@@ -131,6 +135,9 @@ const stats = computed(() => heroData.value.items)
             :alt="heroData.media.image.alt"
             :style="hiroMobileImageVars"
             class="mx-auto w-[var(--hiro-mobile-w)] max-w-[var(--hiro-mobile-max-w)] object-contain sm:w-[var(--hiro-mobile-w-sm)] sm:max-w-[var(--hiro-mobile-max-w-sm)]"
+            loading="eager"
+            decoding="async"
+            fetchpriority="high"
             draggable="false"
           />
         </div>
@@ -248,4 +255,3 @@ const stats = computed(() => heroData.value.items)
   }
 }
 </style>
-

@@ -8,7 +8,6 @@ const fallbackLaunchData = fallbackAiValueData?.meta?.launch || {}
 const fallbackLaunchMeta = fallbackLaunchData?.meta || {}
 
 const { data: subscriptionsSection } = useAsyncData('subscriptions-section', fetchSubscriptionsSection, {
-  server: false,
   default: () => null,
 })
 

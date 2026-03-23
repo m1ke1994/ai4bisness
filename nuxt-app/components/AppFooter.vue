@@ -14,6 +14,8 @@
             :src="logoSrc"
             :alt="logoAlt"
             class="h-[56px] w-auto rounded-full sm:h-[62px] lg:h-[80px]"
+            loading="lazy"
+            decoding="async"
             draggable="false"
           />
 
@@ -56,7 +58,6 @@ const legalColumn = footerData.items.find(
 )
 
 const { data: footerSection } = useAsyncData('footer-section', fetchFooterSection, {
-  server: false,
   default: () => null,
 })
 

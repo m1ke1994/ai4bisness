@@ -6,7 +6,6 @@ import { siteData } from '~/data/siteData'
 const fallbackChannelsData = siteData.channels
 
 const { data: channelsSection } = useAsyncData('channels-section', fetchChannelsSection, {
-  server: false,
   default: () => null,
 })
 
@@ -56,6 +55,8 @@ const channelItems = computed(() => channelsData.value.items)
       alt=""
       aria-hidden="true"
       class="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-[0.75]"
+      loading="lazy"
+      decoding="async"
       draggable="false"
     />
 
@@ -110,6 +111,8 @@ const channelItems = computed(() => channelsData.value.items)
               :src="item.icon.src"
               :alt="item.icon.alt"
               class="h-4 w-4 shrink-0 object-contain opacity-90 transition group-hover:opacity-100"
+              loading="lazy"
+              decoding="async"
             />
             <span class="truncate">{{ item.name }}</span>
           </a>
@@ -126,12 +129,16 @@ const channelItems = computed(() => channelsData.value.items)
             :src="channelsData.media.image.src"
             :alt="channelsData.media.image.alt"
             class="h-auto w-[46%] object-contain translate-y-[6px] sm:translate-y-[10px] lg:translate-y-[14px]"
+            loading="lazy"
+            decoding="async"
             draggable="false"
           />
           <img
             :src="channelsData.media.secondaryImage.src || channelsData.media.image.src"
             :alt="channelsData.media.secondaryImage.alt"
             class="h-auto w-[46%] object-contain translate-y-[6px] sm:translate-y-[10px] lg:translate-y-[14px]"
+            loading="lazy"
+            decoding="async"
             draggable="false"
             @error="($event) => ($event.target.src = channelsData.media.image.src)"
           />
@@ -140,4 +147,3 @@ const channelItems = computed(() => channelsData.value.items)
     </div>
   </div>
 </template>
-

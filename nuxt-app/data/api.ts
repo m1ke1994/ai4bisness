@@ -444,7 +444,83 @@ export type EffectivenessSectionData = {
   }
 }
 
+type FooterPageApiResponse = {
+  key?: string
+  slug?: string
+  title?: string
+  content?: string
+}
+
+export type FooterPageData = {
+  key: string
+  slug: string
+  title: string
+  content: string
+}
+
 const normalizeBaseUrl = (value: string) => value.replace(/\/+$/, '')
+
+const getFooterPagesApiBaseUrls = () => {
+  const candidates: string[] = []
+
+  const pushCandidate = (value: string) => {
+    const normalizedValue = value.trim()
+    if (!normalizedValue) {
+      return
+    }
+
+    const normalizedUrl = normalizeBaseUrl(normalizedValue)
+    if (!candidates.includes(normalizedUrl)) {
+      candidates.push(normalizedUrl)
+    }
+  }
+
+  try {
+    const runtimeConfig = useRuntimeConfig()
+    const publicApiBase = String(runtimeConfig.public?.apiBase || '').trim()
+    const siteUrl = String(runtimeConfig.public?.siteUrl || '').trim()
+    const internalApiBase = String(runtimeConfig.apiInternalBase || '').trim()
+
+    if (import.meta.server && internalApiBase) {
+      pushCandidate(internalApiBase)
+    }
+
+    pushCandidate(publicApiBase)
+    pushCandidate(siteUrl)
+    pushCandidate(internalApiBase)
+  } catch {
+    // Runtime config is unavailable outside Nuxt context.
+  }
+
+  if (import.meta.client && typeof window !== 'undefined') {
+    pushCandidate(window.location.origin)
+  }
+
+  pushCandidate('http://backend:8000')
+
+  return candidates
+}
+
+const baseUrlHasApiSuffix = (baseUrl: string) => {
+  try {
+    const path = new URL(baseUrl).pathname.replace(/\/+$/, '')
+    return path.endsWith('/api')
+  } catch {
+    return /\/api\/?$/i.test(baseUrl)
+  }
+}
+
+const buildFooterPageEndpoints = (slug: string, baseUrl: string) => {
+  const encodedSlug = encodeURIComponent(slug)
+  const apiPath = `/api/footer-pages/${encodedSlug}/`
+  const plainPath = `/footer-pages/${encodedSlug}/`
+
+  if (baseUrlHasApiSuffix(baseUrl)) {
+    return [plainPath, apiPath]
+  }
+
+  return [apiPath, plainPath]
+}
 
 const getBackendBaseUrl = () => {
   try {
@@ -553,6 +629,46 @@ export const fetchFooterSection = async (): Promise<FooterSectionData | null> =>
   } catch {
     return null
   }
+}
+
+export const fetchFooterPageBySlug = async (slug: string): Promise<FooterPageData | null> => {
+  const normalizedSlug = (slug || '').trim()
+  if (!normalizedSlug) {
+    return null
+  }
+
+  const baseUrls = getFooterPagesApiBaseUrls()
+
+  for (const baseUrl of baseUrls) {
+    const endpoints = buildFooterPageEndpoints(normalizedSlug, baseUrl)
+
+    for (const endpoint of endpoints) {
+      try {
+        const payload = await $fetch<FooterPageApiResponse>(endpoint, {
+          baseURL: baseUrl,
+        })
+
+        const key = (payload?.key || '').trim()
+        const responseSlug = (payload?.slug || '').trim()
+        const title = (payload?.title || '').trim()
+
+        if (!key || !responseSlug || !title) {
+          continue
+        }
+
+        return {
+          key,
+          slug: responseSlug,
+          title,
+          content: (payload?.content || '').trim(),
+        }
+      } catch {
+        // Try the next endpoint/base URL variant.
+      }
+    }
+  }
+
+  return null
 }
 
 export const fetchHeroSection = async (): Promise<HeroSectionData | null> => {

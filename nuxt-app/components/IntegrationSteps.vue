@@ -6,7 +6,6 @@ import { siteData } from '~/data/siteData'
 const fallbackIntegrationStepsData = siteData.steps
 
 const { data: integrationStepsSection } = useAsyncData('integration-steps-section', fetchIntegrationStepsSection, {
-  server: false,
   default: () => null,
 })
 
@@ -117,6 +116,7 @@ class="mt-3 text-[30px] font-semibold tracking-[-0.02em] !text-gray-400 sm:text-
         :alt="step.media.image.alt"
         class="max-h-[260px] w-auto max-w-full object-contain sm:max-h-[170px]"
         loading="lazy"
+        decoding="async"
         draggable="false"
       />
 
@@ -135,6 +135,8 @@ class="mt-3 text-[30px] font-semibold tracking-[-0.02em] !text-gray-400 sm:text-
       :src="ctaData.media.background.src"
       alt=""
       class="pointer-events-none absolute inset-0 h-full w-full object-cover"
+      loading="lazy"
+      decoding="async"
     />
 
     <div
@@ -158,6 +160,7 @@ class="mt-3 text-[30px] font-semibold tracking-[-0.02em] !text-gray-400 sm:text-
           :alt="ctaData.media.image.alt"
           class="max-h-[260px] w-auto max-w-full object-contain sm:max-h-[170px]"
           loading="lazy"
+          decoding="async"
           draggable="false"
         />
 
@@ -213,6 +216,7 @@ v-if="step.media.image.src"
 :alt="step.media.image.alt"
 class="max-h-[250px] w-auto object-contain"
 loading="lazy"
+decoding="async"
 draggable="false"
 />
 
@@ -259,6 +263,7 @@ v-if="step.media.image.src"
 :alt="step.media.image.alt"
 class="max-h-[250px] w-auto object-contain"
 loading="lazy"
+decoding="async"
 draggable="false"
 />
 
@@ -278,6 +283,8 @@ class="fade-item relative overflow-hidden rounded-[32px] bg-[#1B1730] p-8 xl:h-[
 :src="ctaData.media.background.src"
 alt=""
 class="pointer-events-none absolute inset-0 h-full w-full object-cover"
+loading="lazy"
+decoding="async"
 />
 
 <div
@@ -303,6 +310,7 @@ v-if="ctaData.media.image.src"
 :alt="ctaData.media.image.alt"
 class="max-h-[250px] w-auto object-contain"
 loading="lazy"
+decoding="async"
 draggable="false"
 />
 

@@ -6,7 +6,6 @@ import { siteData } from '~/data/siteData'
 const fallbackIntegrationsData = siteData?.aiValue?.meta?.integrations || {}
 
 const { data: integrationsSection } = useAsyncData('system-integrations-section', fetchSystemIntegrationsSection, {
-  server: false,
   default: () => null,
 })
 
@@ -88,6 +87,7 @@ const getRowImageAlt = (row) => {
                   :src="getRowImageSrc(row)"
                   :alt="getRowImageAlt(row)"
                   loading="lazy"
+                  decoding="async"
                 />
               </div>
 

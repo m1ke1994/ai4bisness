@@ -1,9 +1,31 @@
-﻿services:
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: ai-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    expose:
+      - "5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
+    container_name: ai-backend
     restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
     environment:
       DEBUG: ${DJANGO_DEBUG}
       SECRET_KEY: ${DJANGO_SECRET_KEY}
@@ -28,17 +50,13 @@
     volumes:
       - static_data:/app/staticfiles
       - media_data:/app/media
-    command: >
-      sh -c "python manage.py collectstatic --noinput &&
-             gunicorn config.wsgi:application
-             --bind 0.0.0.0:8000
-             --workers ${GUNICORN_WORKERS}
-             --timeout ${GUNICORN_TIMEOUT}"
+    command: sh -c "python manage.py collectstatic --noinput && gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers ${GUNICORN_WORKERS} --timeout ${GUNICORN_TIMEOUT}"
 
   frontend:
     build:
       context: ./nuxt-app
       dockerfile: Dockerfile
+    container_name: ai-frontend
     restart: unless-stopped
     depends_on:
       - backend
@@ -53,17 +71,21 @@
 
   nginx:
     image: nginx:1.27-alpine
+    container_name: ai-nginx
     restart: unless-stopped
     depends_on:
       - backend
       - frontend
     ports:
-      - "${NGINX_HTTP_PORT}:80"
+      - "80:80"
+      - "443:443"
     volumes:
       - ./deploy/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+      - /etc/letsencrypt:/etc/letsencrypt:ro
       - static_data:/var/www/static:ro
       - media_data:/var/www/media:ro
 
 volumes:
+  postgres_data:
   static_data:
   media_data:

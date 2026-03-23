@@ -7,7 +7,6 @@ const CONTACT_FORM_OPEN_EVENT = siteData.events.contactFormOpen
 const fallbackPricingData = siteData.pricing
 
 const { data: pricingSection } = useAsyncData('pricing-section', fetchPricingSection, {
-  server: false,
   default: () => null,
 })
 
