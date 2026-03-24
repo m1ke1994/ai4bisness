@@ -1,4 +1,5 @@
 import logging
+from datetime import date, time
 
 import requests
 from django.conf import settings
@@ -13,6 +14,8 @@ def send_company_brief_pdf_to_telegram(
     pdf_bytes: bytes,
     file_name: str,
     company_name: str,
+    preferred_contact_date: date | None,
+    preferred_contact_time: time | None,
 ) -> dict[str, str]:
     bot_token = getattr(settings, "COMPANY_BRIEF_TELEGRAM_BOT_TOKEN", "").strip()
     chat_id = str(getattr(settings, "COMPANY_BRIEF_TELEGRAM_CHAT_ID", "")).strip()
@@ -24,7 +27,21 @@ def send_company_brief_pdf_to_telegram(
         return {"status": TelegramDeliveryStatus.SKIPPED, "error": ""}
 
     endpoint = f"https://api.telegram.org/bot{bot_token}/sendDocument"
-    caption = f"Новая заполненная анкета от компании: {company_name}"
+    date_text = (
+        preferred_contact_date.strftime("%d.%m.%Y")
+        if preferred_contact_date
+        else "не указано"
+    )
+    time_text = (
+        preferred_contact_time.strftime("%H:%M")
+        if preferred_contact_time
+        else "не указано"
+    )
+    caption = (
+        f"Новая анкета от компании: {company_name}\n"
+        f"Назначенное время связи: {date_text} {time_text}\n"
+        "Во вложении PDF-файл с заполненной анкетой."
+    )
 
     try:
         response = requests.post(

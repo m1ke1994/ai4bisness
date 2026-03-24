@@ -65,6 +65,8 @@ class CompanyBriefCreateAPIView(APIView):
             pdf_bytes=pdf_bytes,
             file_name=pdf_file_name,
             company_name=brief.company_name,
+            preferred_contact_date=brief.preferred_contact_date,
+            preferred_contact_time=brief.preferred_contact_time,
         )
 
         brief.telegram_status = telegram_result["status"]

@@ -32,6 +32,8 @@ class CompanyBriefAdmin(admin.ModelAdmin):
         "country",
         "website_url",
         "timezone_name",
+        "preferred_contact_date",
+        "preferred_contact_time",
         "services",
         "assistant_channels",
         "crm_integrations",
@@ -70,6 +72,8 @@ class CompanyBriefAdmin(admin.ModelAdmin):
                     "country",
                     "website_url",
                     "timezone_name",
+                    "preferred_contact_date",
+                    "preferred_contact_time",
                 )
             },
         ),

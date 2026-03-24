@@ -3,7 +3,6 @@ from pathlib import Path
 from xml.sax.saxutils import escape
 
 from django.utils import timezone
-import reportlab
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
@@ -19,15 +18,18 @@ def _resolve_fonts() -> tuple[str, str]:
     regular_name = "BriefSans"
     bold_name = "BriefSansBold"
 
-    if regular_name in pdfmetrics.getRegisteredFontNames() and bold_name in pdfmetrics.getRegisteredFontNames():
+    if (
+        regular_name in pdfmetrics.getRegisteredFontNames()
+        and bold_name in pdfmetrics.getRegisteredFontNames()
+    ):
         return regular_name, bold_name
 
     local_fonts_dir = Path(__file__).resolve().parent.parent / "assets" / "fonts"
-    reportlab_fonts_dir = Path(reportlab.__file__).resolve().parent / "fonts"
-
     font_pairs = [
-        (local_fonts_dir / "DejaVuSans.ttf", local_fonts_dir / "DejaVuSans-Bold.ttf"),
-        (reportlab_fonts_dir / "Vera.ttf", reportlab_fonts_dir / "VeraBd.ttf"),
+        (
+            local_fonts_dir / "DejaVuSans.ttf",
+            local_fonts_dir / "DejaVuSans-Bold.ttf",
+        ),
         (
             Path("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"),
             Path("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"),
@@ -44,18 +46,36 @@ def _resolve_fonts() -> tuple[str, str]:
             pdfmetrics.registerFont(TTFont(bold_name, str(bold_path)))
             return regular_name, bold_name
 
-    return "Helvetica", "Helvetica-Bold"
+    raise RuntimeError(
+        "Не найден шрифт с поддержкой кириллицы. Установите DejaVu Sans или Arial."
+    )
 
 
-def _value_or_dash(value) -> str:
+def _safe_text(value) -> str:
     text = str(value or "").strip()
     if not text:
-        return "—"
+        return "Не указано"
     return text
 
 
 def _paragraph_text(value: str) -> str:
     return escape(value).replace("\n", "<br/>")
+
+
+def _format_date(value) -> str:
+    if not value:
+        return "Не указано"
+    if isinstance(value, str):
+        return value
+    return value.strftime("%d.%m.%Y")
+
+
+def _format_time(value) -> str:
+    if not value:
+        return "Не указано"
+    if isinstance(value, str):
+        return value[:5]
+    return value.strftime("%H:%M")
 
 
 def _build_styles(font_regular: str, font_bold: str) -> dict[str, ParagraphStyle]:
@@ -119,11 +139,14 @@ def _build_styles(font_regular: str, font_bold: str) -> dict[str, ParagraphStyle
     }
 
 
-def _build_two_column_table(rows: list[tuple[str, str]], styles: dict[str, ParagraphStyle]) -> Table:
+def _build_key_value_table(
+    rows: list[tuple[str, str]],
+    styles: dict[str, ParagraphStyle],
+) -> Table:
     table_rows = [
         [
             Paragraph(_paragraph_text(label), styles["cell_label"]),
-            Paragraph(_paragraph_text(_value_or_dash(value)), styles["cell_value"]),
+            Paragraph(_paragraph_text(_safe_text(value)), styles["cell_value"]),
         ]
         for label, value in rows
     ]
@@ -147,20 +170,66 @@ def _build_two_column_table(rows: list[tuple[str, str]], styles: dict[str, Parag
     return table
 
 
-def _price_range(price_from: str, price_to: str) -> str:
-    from_value = _value_or_dash(price_from)
-    to_value = _value_or_dash(price_to)
+def _format_service_price(service: dict) -> str:
+    price_from = _safe_text(service.get("price_from"))
+    price_to = _safe_text(service.get("price_to"))
 
-    if from_value == "—" and to_value == "—":
+    if price_from == "Не указано" and price_to == "Не указано":
         return "Не указано"
 
-    if from_value != "—" and to_value != "—":
-        return f"{from_value} - {to_value}"
+    if price_from != "Не указано" and price_to != "Не указано":
+        return f"{price_from} - {price_to}"
 
-    if from_value != "—":
-        return f"от {from_value}"
+    if price_from != "Не указано":
+        return f"от {price_from}"
 
-    return f"до {to_value}"
+    return f"до {price_to}"
+
+
+def _build_services_table(
+    services: list[dict],
+    styles: dict[str, ParagraphStyle],
+) -> Table:
+    rows = [["Услуга", "Описание", "Стоимость"]]
+
+    for service in services:
+        rows.append(
+            [
+                _safe_text(service.get("name")),
+                _safe_text(service.get("description")),
+                _format_service_price(service),
+            ]
+        )
+
+    table = Table(
+        [
+            [
+                Paragraph(_paragraph_text(row[0]), styles["cell_label"] if idx == 0 else styles["cell_value"]),
+                Paragraph(_paragraph_text(row[1]), styles["cell_label"] if idx == 0 else styles["cell_value"]),
+                Paragraph(_paragraph_text(row[2]), styles["cell_label"] if idx == 0 else styles["cell_value"]),
+            ]
+            for idx, row in enumerate(rows)
+        ],
+        colWidths=[45 * mm, 95 * mm, 40 * mm],
+    )
+
+    table.setStyle(
+        TableStyle(
+            [
+                ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#E8EDFF")),
+                ("TEXTCOLOR", (0, 0), (-1, 0), colors.HexColor("#2B2E45")),
+                ("BACKGROUND", (0, 1), (-1, -1), colors.white),
+                ("BOX", (0, 0), (-1, -1), 0.6, colors.HexColor("#DDE2F1")),
+                ("INNERGRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#E5EAF6")),
+                ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                ("LEFTPADDING", (0, 0), (-1, -1), 8),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 8),
+                ("TOPPADDING", (0, 0), (-1, -1), 6),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
+            ]
+        )
+    )
+    return table
 
 
 def build_company_brief_pdf(brief: CompanyBrief) -> bytes:
@@ -188,7 +257,9 @@ def build_company_brief_pdf(brief: CompanyBrief) -> bytes:
             styles["meta"],
         ),
         Paragraph(
-            _paragraph_text("Документ сформирован автоматически на основании заполненной формы."),
+            _paragraph_text(
+                "Документ сформирован автоматически на основании заполненной формы."
+            ),
             styles["meta"],
         ),
         Spacer(1, 6),
@@ -196,7 +267,7 @@ def build_company_brief_pdf(brief: CompanyBrief) -> bytes:
 
     story.append(Paragraph("Основные", styles["section_title"]))
     story.append(
-        _build_two_column_table(
+        _build_key_value_table(
             [
                 ("Название компании", brief.company_name),
                 ("Отрасль", brief.industry),
@@ -211,7 +282,7 @@ def build_company_brief_pdf(brief: CompanyBrief) -> bytes:
 
     story.append(Paragraph("Контакты", styles["section_title"]))
     story.append(
-        _build_two_column_table(
+        _build_key_value_table(
             [
                 ("Основной номер телефона", brief.primary_phone),
                 ("Дополнительный номер телефона", brief.secondary_phone),
@@ -229,52 +300,15 @@ def build_company_brief_pdf(brief: CompanyBrief) -> bytes:
     )
 
     story.append(Paragraph("Услуги", styles["section_title"]))
-    service_rows = [["Услуга", "Описание", "Стоимость"]]
-    for service in brief.services:
-        service_rows.append(
-            [
-                _value_or_dash(service.get("name")),
-                _value_or_dash(service.get("description")),
-                _price_range(service.get("price_from", ""), service.get("price_to", "")),
-            ]
-        )
-
-    service_table = Table(
-        [
-            [
-                Paragraph(_paragraph_text(row[0]), styles["cell_label"] if idx == 0 else styles["cell_value"]),
-                Paragraph(_paragraph_text(row[1]), styles["cell_label"] if idx == 0 else styles["cell_value"]),
-                Paragraph(_paragraph_text(row[2]), styles["cell_label"] if idx == 0 else styles["cell_value"]),
-            ]
-            for idx, row in enumerate(service_rows)
-        ],
-        colWidths=[45 * mm, 95 * mm, 40 * mm],
-    )
-    service_table.setStyle(
-        TableStyle(
-            [
-                ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#E8EDFF")),
-                ("TEXTCOLOR", (0, 0), (-1, 0), colors.HexColor("#2B2E45")),
-                ("BACKGROUND", (0, 1), (-1, -1), colors.white),
-                ("BOX", (0, 0), (-1, -1), 0.6, colors.HexColor("#DDE2F1")),
-                ("INNERGRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#E5EAF6")),
-                ("VALIGN", (0, 0), (-1, -1), "TOP"),
-                ("LEFTPADDING", (0, 0), (-1, -1), 8),
-                ("RIGHTPADDING", (0, 0), (-1, -1), 8),
-                ("TOPPADDING", (0, 0), (-1, -1), 6),
-                ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
-            ]
-        )
-    )
-    story.append(service_table)
+    story.append(_build_services_table(brief.services or [], styles))
 
     story.append(Paragraph("Ассистенты", styles["section_title"]))
     assistant_channels = brief.assistant_channels or []
     if assistant_channels:
         for channel in assistant_channels:
-            story.append(Paragraph(_paragraph_text(f"• {channel}"), styles["bullet"]))
+            story.append(Paragraph(_paragraph_text(f"- {channel}"), styles["bullet"]))
     else:
-        story.append(Paragraph(_paragraph_text("• Не выбрано"), styles["bullet"]))
+        story.append(Paragraph(_paragraph_text("- Не выбрано"), styles["bullet"]))
 
     story.append(Paragraph("Интеграции", styles["section_title"]))
     crm_integrations = brief.crm_integrations or []
@@ -283,15 +317,26 @@ def build_company_brief_pdf(brief: CompanyBrief) -> bytes:
     if crm_integrations:
         story.append(Paragraph(_paragraph_text("CRM и системы"), styles["cell_label"]))
         for integration in crm_integrations:
-            story.append(Paragraph(_paragraph_text(f"• {integration}"), styles["bullet"]))
+            story.append(Paragraph(_paragraph_text(f"- {integration}"), styles["bullet"]))
 
     if booking_integrations:
         story.append(Paragraph(_paragraph_text("Бронирование"), styles["cell_label"]))
         for integration in booking_integrations:
-            story.append(Paragraph(_paragraph_text(f"• {integration}"), styles["bullet"]))
+            story.append(Paragraph(_paragraph_text(f"- {integration}"), styles["bullet"]))
 
     if not crm_integrations and not booking_integrations:
-        story.append(Paragraph(_paragraph_text("• Не выбрано"), styles["bullet"]))
+        story.append(Paragraph(_paragraph_text("- Не выбрано"), styles["bullet"]))
+
+    story.append(Paragraph("Дата и время связи", styles["section_title"]))
+    story.append(
+        _build_key_value_table(
+            [
+                ("Предпочтительная дата", _format_date(brief.preferred_contact_date)),
+                ("Предпочтительное время", _format_time(brief.preferred_contact_time)),
+            ],
+            styles,
+        )
+    )
 
     document.build(story)
     return buffer.getvalue()

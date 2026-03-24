@@ -1,6 +1,7 @@
 import re
 from decimal import Decimal, InvalidOperation
 
+from django.utils import timezone
 from rest_framework import serializers
 
 from apps.company_briefs.models import CompanyBrief
@@ -109,6 +110,12 @@ class CompanyBriefCreateSerializer(serializers.ModelSerializer):
     sales_email = serializers.EmailField(required=False, allow_blank=True, default="")
     subindustry = serializers.CharField(max_length=255, required=False, allow_blank=True, default="")
     website_url = serializers.URLField(required=False, allow_blank=True, default="")
+    preferred_contact_date = serializers.DateField(required=True)
+    preferred_contact_time = serializers.TimeField(
+        required=True,
+        input_formats=["%H:%M", "%H:%M:%S"],
+        format="%H:%M",
+    )
 
     class Meta:
         model = CompanyBrief
@@ -129,6 +136,8 @@ class CompanyBriefCreateSerializer(serializers.ModelSerializer):
             "country",
             "website_url",
             "timezone_name",
+            "preferred_contact_date",
+            "preferred_contact_time",
             "services",
             "assistant_channels",
             "crm_integrations",
@@ -180,6 +189,45 @@ class CompanyBriefCreateSerializer(serializers.ModelSerializer):
 
     def validate_booking_integrations(self, value):
         return normalize_choice_list(value)
+
+    def validate(self, attrs):
+        attrs = super().validate(attrs)
+
+        preferred_contact_date = attrs.get("preferred_contact_date")
+        preferred_contact_time = attrs.get("preferred_contact_time")
+
+        if not preferred_contact_date:
+            raise serializers.ValidationError(
+                {"preferred_contact_date": "Выберите дату связи."}
+            )
+
+        if not preferred_contact_time:
+            raise serializers.ValidationError(
+                {"preferred_contact_time": "Выберите время связи."}
+            )
+
+        now = timezone.localtime()
+        current_date = now.date()
+        current_time = now.time().replace(second=0, microsecond=0)
+
+        if preferred_contact_date < current_date:
+            raise serializers.ValidationError(
+                {
+                    "preferred_contact_date": "Нельзя выбрать прошедшую дату. Выберите актуальную дату связи."
+                }
+            )
+
+        if (
+            preferred_contact_date == current_date
+            and preferred_contact_time <= current_time
+        ):
+            raise serializers.ValidationError(
+                {
+                    "preferred_contact_time": "Выберите время связи позже текущего момента."
+                }
+            )
+
+        return attrs
 
     def create(self, validated_data):
         return CompanyBrief.objects.create(**validated_data)

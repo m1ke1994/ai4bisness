@@ -23,13 +23,6 @@
         </p>
 
         <div
-          v-if="submitSuccessMessage"
-          class="mt-6 rounded-[16px] border border-[#CFE5C7] bg-[#F2FBEE] px-4 py-3 text-[14px] text-[#2E6B2E] sm:text-[15px]"
-        >
-          {{ submitSuccessMessage }}
-        </div>
-
-        <div
           v-if="submitErrorMessage"
           class="mt-4 rounded-[16px] border border-[#F3C8CD] bg-[#FEF3F4] px-4 py-3 text-[14px] text-[#B42318] sm:text-[15px]"
         >
@@ -214,6 +207,44 @@
             </div>
           </section>
 
+          <section class="rounded-[24px] border border-[#DCE2F1] bg-[linear-gradient(180deg,#FFFFFF_0%,#F6F8FF_100%)] p-5 sm:p-6">
+            <h2 class="text-[24px] font-semibold tracking-[-0.02em] text-[#1A2035] sm:text-[28px]">
+              Выберите удобные дату и время для связи
+            </h2>
+            <p class="mt-3 text-[14px] leading-[1.55] text-[#536082] sm:text-[15px]">
+              После отправки анкеты менеджер свяжется с вами в выбранное время, чтобы уточнить детали и настроить ИИ-ассистента под вашу компанию.
+            </p>
+
+            <div class="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5">
+              <BriefField
+                id="preferred-contact-date"
+                v-model="form.preferredContactDate"
+                label="Дата связи"
+                helper="Выберите дату, когда вам удобно обсудить запуск и настройку."
+                :error="errors.preferredContactDate"
+                :required="true"
+                :disabled="isSubmitting"
+                type="date"
+                :min="todayIsoDate"
+                @blur="revalidateIfNeeded"
+              />
+
+              <BriefField
+                id="preferred-contact-time"
+                v-model="form.preferredContactTime"
+                label="Время связи"
+                helper="Выберите удобное время звонка или консультации."
+                :error="errors.preferredContactTime"
+                :required="true"
+                :disabled="isSubmitting"
+                type="time"
+                :min="minimumTimeForSelectedDate"
+                step="300"
+                @blur="revalidateIfNeeded"
+              />
+            </div>
+          </section>
+
           <section class="rounded-[24px] border border-[#DBE1F0] bg-[linear-gradient(180deg,#FFFFFF_0%,#F7F9FF_100%)] p-5 sm:p-6">
             <p class="text-[14px] leading-[1.6] text-[#4D587A] sm:text-[15px]">
               Чем полнее заполнена анкета, тем точнее получится настройка ИИ-ассистента, интеграций и рабочих сценариев.
@@ -230,11 +261,88 @@
         </form>
       </div>
     </div>
+
+    <Transition
+      enter-active-class="transition duration-300 ease-out"
+      enter-from-class="opacity-0 scale-95"
+      enter-to-class="opacity-100 scale-100"
+      leave-active-class="transition duration-200 ease-in"
+      leave-from-class="opacity-100 scale-100"
+      leave-to-class="opacity-0 scale-95"
+    >
+      <div
+        v-if="showSuccessModal"
+        class="fixed inset-0 z-[1200] flex items-center justify-center p-4 sm:p-6"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Успешная отправка анкеты"
+      >
+        <div class="absolute inset-0 bg-[#0A0D1D]/70 backdrop-blur-[2px]"></div>
+
+        <div class="relative z-10 w-full max-w-[560px] rounded-[24px] border border-[#D7DDF0] bg-white p-6 shadow-[0_28px_80px_rgba(17,24,39,0.22)] sm:p-8">
+          <button
+            type="button"
+            class="absolute right-4 top-4 inline-flex h-9 w-9 items-center justify-center rounded-full border border-[#DFE4F3] text-[#4A567C] transition hover:bg-[#F5F7FF]"
+            aria-label="Закрыть окно"
+            @click="closeSuccessModal"
+          >
+            <svg viewBox="0 0 20 20" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+              <path d="M5 5l10 10" />
+              <path d="M15 5 5 15" />
+            </svg>
+          </button>
+
+          <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[linear-gradient(180deg,#E9F8E6_0%,#DDF3D8_100%)] text-[#2F7A31] shadow-[0_12px_28px_rgba(63,156,80,0.2)]">
+            <svg viewBox="0 0 20 20" class="h-8 w-8" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 10.4l3.2 3.2L16 4.8" />
+            </svg>
+          </div>
+
+          <h3 class="mt-5 text-center text-[24px] font-semibold tracking-[-0.02em] text-[#1A2035] sm:text-[28px]">
+            Спасибо, ваша анкета отправлена
+          </h3>
+
+          <p class="mt-3 text-center text-[15px] leading-[1.6] text-[#4D587A] sm:text-[16px]">
+            В назначенное время с вами свяжется менеджер для более тонкой настройки ИИ-ассистента.
+          </p>
+
+          <p
+            v-if="formattedSubmittedContactDate && formattedSubmittedContactTime"
+            class="mt-4 rounded-[14px] border border-[#E1E6F4] bg-[#F7F9FF] px-4 py-3 text-center text-[14px] text-[#2E3756]"
+          >
+            Вы выбрали время связи: <span class="font-semibold">{{ formattedSubmittedContactDate }} в {{ formattedSubmittedContactTime }}</span>
+          </p>
+
+          <p class="mt-4 text-center text-[13px] text-[#677392]">
+            Автоматический переход на главную через {{ redirectCountdownSeconds }} сек.
+          </p>
+
+          <div class="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <button
+              type="button"
+              class="inline-flex h-[46px] items-center justify-center rounded-[14px] border border-[#D4D9F4] bg-[linear-gradient(90deg,rgba(111,99,255,0.12)_0%,rgba(139,127,255,0.08)_100%)] px-4 text-[14px] font-semibold text-[#2A2F45] transition hover:border-[#C5CCEF]"
+              @click="goHomeNow"
+            >
+              Вернуться на главную
+            </button>
+
+            <button
+              type="button"
+              class="inline-flex h-[46px] items-center justify-center rounded-[14px] border border-[#DEE3F2] bg-white px-4 text-[14px] font-medium text-[#3B4669] transition hover:bg-[#F8F9FF]"
+              @click="closeSuccessModal"
+            >
+              Остаться на странице
+            </button>
+          </div>
+        </div>
+      </div>
+    </Transition>
   </section>
 </template>
 
 <script setup>
-import { onMounted, reactive, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
+import { useRouter } from 'vue-router'
 
 import BriefField from '~/components/company-brief/BriefField.vue'
 import ServiceCard from '~/components/company-brief/ServiceCard.vue'
@@ -244,6 +352,10 @@ import { ASSISTANT_CHANNELS, BOOKING_INTEGRATIONS, CRM_INTEGRATIONS, INDUSTRY_OP
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const PHONE_PATTERN = /^[0-9+\-\s()]{6,30}$/
 const PRICE_PATTERN = /^\d+(?:[.,]\d{1,2})?$/
+const REDIRECT_DELAY_SECONDS = 4
+const REDIRECT_DELAY_MS = REDIRECT_DELAY_SECONDS * 1000
+
+const router = useRouter()
 
 const createEmptyService = () => ({ name: '', description: '', priceFrom: '', priceTo: '' })
 const createEmptyServiceErrors = () => ({ name: '', description: '', priceFrom: '', priceTo: '' })
@@ -297,6 +409,8 @@ const form = reactive({
   country: '',
   websiteUrl: '',
   timezoneName: '',
+  preferredContactDate: '',
+  preferredContactTime: '',
   services: [createEmptyService()],
   assistantChannels: [],
   crmIntegrations: [],
@@ -320,16 +434,60 @@ const errors = reactive({
   country: '',
   websiteUrl: '',
   timezoneName: '',
+  preferredContactDate: '',
+  preferredContactTime: '',
   assistantChannels: '',
   services: [createEmptyServiceErrors()],
 })
 
 const isSubmitting = ref(false)
 const isSubmitAttempted = ref(false)
-const submitSuccessMessage = ref('')
 const submitErrorMessage = ref('')
+const showSuccessModal = ref(false)
+const submittedContactDate = ref('')
+const submittedContactTime = ref('')
+const redirectCountdownSeconds = ref(REDIRECT_DELAY_SECONDS)
+let redirectTimeoutId = null
+let redirectIntervalId = null
 
 const trimValue = (value) => String(value || '').trim()
+
+const padTwo = (value) => String(value).padStart(2, '0')
+
+const getCurrentDateTime = () => new Date()
+
+const formatDateToIso = (dateValue) => {
+  const year = dateValue.getFullYear()
+  const month = padTwo(dateValue.getMonth() + 1)
+  const day = padTwo(dateValue.getDate())
+  return `${year}-${month}-${day}`
+}
+
+const formatTimeToHm = (dateValue) => `${padTwo(dateValue.getHours())}:${padTwo(dateValue.getMinutes())}`
+
+const todayIsoDate = computed(() => formatDateToIso(getCurrentDateTime()))
+
+const minimumTimeForSelectedDate = computed(() => {
+  if (!form.preferredContactDate) return ''
+  if (form.preferredContactDate !== todayIsoDate.value) return ''
+  return formatTimeToHm(getCurrentDateTime())
+})
+
+const formatIsoDateForHuman = (isoDate) => {
+  if (!isoDate) return ''
+  const [year, month, day] = isoDate.split('-').map(Number)
+  if (!year || !month || !day) return ''
+
+  const date = new Date(year, month - 1, day)
+  return new Intl.DateTimeFormat('ru-RU', {
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric',
+  }).format(date)
+}
+
+const formattedSubmittedContactDate = computed(() => formatIsoDateForHuman(submittedContactDate.value))
+const formattedSubmittedContactTime = computed(() => submittedContactTime.value || '')
 
 const clearErrors = () => {
   Object.keys(errors).forEach((key) => {
@@ -398,6 +556,25 @@ const validateForm = () => {
     errors.websiteUrl = 'Введите корректный URL (например, https://company.ru).'
   }
 
+  if (!trimValue(form.preferredContactDate)) {
+    errors.preferredContactDate = 'Выберите дату связи.'
+  }
+
+  if (!trimValue(form.preferredContactTime)) {
+    errors.preferredContactTime = 'Выберите время связи.'
+  }
+
+  if (trimValue(form.preferredContactDate) && trimValue(form.preferredContactTime)) {
+    const selectedDateTime = new Date(`${form.preferredContactDate}T${form.preferredContactTime}`)
+    const now = getCurrentDateTime()
+
+    if (Number.isNaN(selectedDateTime.getTime())) {
+      errors.preferredContactTime = 'Выберите корректные дату и время связи.'
+    } else if (selectedDateTime <= now) {
+      errors.preferredContactTime = 'Нельзя выбрать прошедшее время. Укажите актуальные дату и время.'
+    }
+  }
+
   errors.services = form.services.map(() => createEmptyServiceErrors())
   form.services.forEach((service, index) => {
     if (!trimValue(service.name)) errors.services[index].name = 'Укажите наименование услуги.'
@@ -446,6 +623,8 @@ const buildPayload = () => ({
   country: trimValue(form.country),
   website_url: trimValue(form.websiteUrl),
   timezone_name: trimValue(form.timezoneName),
+  preferred_contact_date: trimValue(form.preferredContactDate),
+  preferred_contact_time: trimValue(form.preferredContactTime),
   services: form.services.map((service) => ({
     name: trimValue(service.name),
     description: trimValue(service.description),
@@ -489,6 +668,8 @@ const applyBackendErrors = (backendErrors) => {
     country: 'country',
     website_url: 'websiteUrl',
     timezone_name: 'timezoneName',
+    preferred_contact_date: 'preferredContactDate',
+    preferred_contact_time: 'preferredContactTime',
     assistant_channels: 'assistantChannels',
   }
 
@@ -521,8 +702,9 @@ const resetForm = () => {
 }
 
 const handleSubmit = async () => {
+  clearRedirectTimers()
+  showSuccessModal.value = false
   isSubmitAttempted.value = true
-  submitSuccessMessage.value = ''
   submitErrorMessage.value = ''
 
   if (!validateForm()) {
@@ -533,14 +715,15 @@ const handleSubmit = async () => {
   isSubmitting.value = true
 
   try {
-    const response = await submitCompanyBrief(buildPayload())
-    submitSuccessMessage.value = response?.message || 'Анкета успешно отправлена. Спасибо!'
+    submittedContactDate.value = form.preferredContactDate
+    submittedContactTime.value = form.preferredContactTime
+
+    await submitCompanyBrief(buildPayload())
+
     resetForm()
     isSubmitAttempted.value = false
-
-    if (typeof window !== 'undefined') {
-      window.scrollTo({ top: 0, behavior: 'smooth' })
-    }
+    showSuccessModal.value = true
+    startRedirectToHome()
   } catch (error) {
     applyBackendErrors(error?.payload?.errors)
     submitErrorMessage.value =
@@ -587,6 +770,71 @@ const revalidateIfNeeded = () => {
   if (isSubmitAttempted.value) validateForm()
 }
 
+const clearRedirectTimers = () => {
+  if (redirectTimeoutId) {
+    window.clearTimeout(redirectTimeoutId)
+    redirectTimeoutId = null
+  }
+
+  if (redirectIntervalId) {
+    window.clearInterval(redirectIntervalId)
+    redirectIntervalId = null
+  }
+}
+
+const goHomeNow = async () => {
+  clearRedirectTimers()
+  showSuccessModal.value = false
+  submittedContactDate.value = ''
+  submittedContactTime.value = ''
+  await router.push('/')
+}
+
+const closeSuccessModal = () => {
+  clearRedirectTimers()
+  showSuccessModal.value = false
+  submittedContactDate.value = ''
+  submittedContactTime.value = ''
+}
+
+const startRedirectToHome = () => {
+  clearRedirectTimers()
+  redirectCountdownSeconds.value = REDIRECT_DELAY_SECONDS
+
+  redirectIntervalId = window.setInterval(() => {
+    if (redirectCountdownSeconds.value > 1) {
+      redirectCountdownSeconds.value -= 1
+    }
+  }, 1000)
+
+  redirectTimeoutId = window.setTimeout(() => {
+    void goHomeNow()
+  }, REDIRECT_DELAY_MS)
+}
+
+watch(
+  () => form.preferredContactDate,
+  () => {
+    if (
+      form.preferredContactDate === todayIsoDate.value
+      && form.preferredContactTime
+      && minimumTimeForSelectedDate.value
+      && form.preferredContactTime < minimumTimeForSelectedDate.value
+    ) {
+      form.preferredContactTime = ''
+    }
+
+    revalidateIfNeeded()
+  },
+)
+
+watch(
+  () => form.preferredContactTime,
+  () => {
+    revalidateIfNeeded()
+  },
+)
+
 const setMeta = (name, content) => {
   if (!content || typeof document === 'undefined') return
 
@@ -603,5 +851,9 @@ const setMeta = (name, content) => {
 onMounted(() => {
   document.title = 'Анкета для компаний | AI4Business'
   setMeta('description', 'Анкета для компаний AI4Business: заполните данные о бизнесе, услугах, каналах и интеграциях для точной настройки ИИ-ассистента.')
+})
+
+onBeforeUnmount(() => {
+  clearRedirectTimers()
 })
 </script>

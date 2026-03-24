@@ -16,6 +16,9 @@
       :placeholder="placeholder"
       :rows="rows"
       :maxlength="maxlength"
+      :min="min"
+      :max="max"
+      :step="step"
       :autocomplete="autocomplete"
       :inputmode="inputmode"
       :disabled="disabled"
@@ -109,6 +112,18 @@ const props = defineProps({
   },
   maxlength: {
     type: [String, Number],
+    default: null,
+  },
+  min: {
+    type: String,
+    default: null,
+  },
+  max: {
+    type: String,
+    default: null,
+  },
+  step: {
+    type: String,
     default: null,
   },
   disabled: {

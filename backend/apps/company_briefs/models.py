@@ -26,6 +26,16 @@ class CompanyBrief(models.Model):
     country = models.CharField(max_length=120, verbose_name="Страна")
     website_url = models.URLField(blank=True, verbose_name="URL веб-сайта")
     timezone_name = models.CharField(max_length=120, verbose_name="Часовой пояс")
+    preferred_contact_date = models.DateField(
+        null=True,
+        blank=True,
+        verbose_name="Предпочтительная дата связи",
+    )
+    preferred_contact_time = models.TimeField(
+        null=True,
+        blank=True,
+        verbose_name="Предпочтительное время связи",
+    )
 
     services = models.JSONField(default=list, verbose_name="Услуги")
     assistant_channels = models.JSONField(default=list, verbose_name="Каналы ассистента")
