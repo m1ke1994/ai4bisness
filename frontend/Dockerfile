@@ -1,0 +1,22 @@
+FROM node:20-alpine
+
+WORKDIR /app
+
+ARG VITE_API_BASE=http://backend:8000
+ARG VITE_PUBLIC_SITE_URL=https://ai4businesss.com
+ARG VITE_TRACKNODE_API_KEY=
+ARG VITE_TRACKNODE_TRACKER_SRC=https://tracknode.ru/tracker.js
+
+ENV VITE_API_BASE=$VITE_API_BASE
+ENV VITE_PUBLIC_SITE_URL=$VITE_PUBLIC_SITE_URL
+ENV VITE_TRACKNODE_API_KEY=$VITE_TRACKNODE_API_KEY
+ENV VITE_TRACKNODE_TRACKER_SRC=$VITE_TRACKNODE_TRACKER_SRC
+
+COPY package.json ./
+RUN npm install
+
+COPY . .
+RUN npm run build
+
+EXPOSE 3000
+CMD ["npm", "run", "preview", "--", "--host", "0.0.0.0", "--port", "3000"]
