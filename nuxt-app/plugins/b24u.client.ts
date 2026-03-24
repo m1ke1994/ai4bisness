@@ -20,7 +20,6 @@ export default defineNuxtPlugin(() => {
     }
   }
 
-<<<<<<< HEAD
   const loadScript = () => {
     if (existingScript) {
       if ((window as any).B24U) {
@@ -64,30 +63,3 @@ export default defineNuxtPlugin(() => {
 
   window.addEventListener('load', scheduleLoad, { once: true })
 })
-=======
-  if (existingScript) {
-    if ((window as any).B24U) {
-      initB24U()
-    } else {
-      existingScript.addEventListener('load', initB24U, { once: true })
-    }
-    return
-  }
-
-  const script = document.createElement('script')
-  script.id = scriptId
-  script.src = 'https://i.b24u.ru/ai4businesss.com'
-  script.defer = true
-  script.async = false
-
-  script.onload = () => {
-    initB24U()
-  }
-
-  script.onerror = () => {
-    console.error('[B24U] failed to load script:', script.src)
-  }
-
-  document.head.appendChild(script)
-})
->>>>>>> 01c2954498212894780bf3e7930b723f73df20ad

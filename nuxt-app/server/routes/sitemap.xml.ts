@@ -27,10 +27,7 @@ const escapeXml = (value: string) =>
 
 export default defineEventHandler((event) => {
   const siteBaseUrl = resolveSiteBaseUrl(event)
-<<<<<<< HEAD
-=======
   const lastmod = new Date().toISOString()
->>>>>>> 01c2954498212894780bf3e7930b723f73df20ad
   const pages = ['/', '/privacy-policy', '/public-offer', '/user-agreement']
 
   const urlNodes = pages
@@ -39,10 +36,7 @@ export default defineEventHandler((event) => {
       return [
         '<url>',
         `<loc>${escapeXml(loc)}</loc>`,
-<<<<<<< HEAD
-=======
         `<lastmod>${lastmod}</lastmod>`,
->>>>>>> 01c2954498212894780bf3e7930b723f73df20ad
         '</url>',
       ].join('')
     })
@@ -56,12 +50,6 @@ export default defineEventHandler((event) => {
   ].join('')
 
   setHeader(event, 'Content-Type', 'application/xml; charset=utf-8')
-<<<<<<< HEAD
   setHeader(event, 'Cache-Control', 'public, max-age=0, s-maxage=3600, stale-while-revalidate=86400')
   return sitemap
 })
-=======
-  return sitemap
-})
-
->>>>>>> 01c2954498212894780bf3e7930b723f73df20ad

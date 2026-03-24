@@ -460,10 +460,6 @@ export type FooterPageData = {
 
 const normalizeBaseUrl = (value: string) => value.replace(/\/+$/, '')
 
-<<<<<<< HEAD
-=======
-<<<<<<< HEAD
->>>>>>> 01c2954498212894780bf3e7930b723f73df20ad
 const getFooterPagesApiBaseUrls = () => {
   const candidates: string[] = []
 
@@ -479,12 +475,6 @@ const getFooterPagesApiBaseUrls = () => {
     }
   }
 
-<<<<<<< HEAD
-=======
-=======
-const getFooterPagesApiBaseUrl = () => {
->>>>>>> 2cbe506af13f3406f4dd92a1f2823035cc7b6772
->>>>>>> 01c2954498212894780bf3e7930b723f73df20ad
   try {
     const runtimeConfig = useRuntimeConfig()
     const publicApiBase = String(runtimeConfig.public?.apiBase || '').trim()
@@ -492,44 +482,17 @@ const getFooterPagesApiBaseUrl = () => {
     const internalApiBase = String(runtimeConfig.apiInternalBase || '').trim()
 
     if (import.meta.server && internalApiBase) {
-<<<<<<< HEAD
-=======
-<<<<<<< HEAD
->>>>>>> 01c2954498212894780bf3e7930b723f73df20ad
       pushCandidate(internalApiBase)
     }
 
     pushCandidate(publicApiBase)
     pushCandidate(siteUrl)
     pushCandidate(internalApiBase)
-<<<<<<< HEAD
-=======
-=======
-      return normalizeBaseUrl(internalApiBase)
-    }
-
-    if (publicApiBase) {
-      return normalizeBaseUrl(publicApiBase)
-    }
-
-    if (siteUrl) {
-      return normalizeBaseUrl(siteUrl)
-    }
-
-    if (internalApiBase) {
-      return normalizeBaseUrl(internalApiBase)
-    }
->>>>>>> 2cbe506af13f3406f4dd92a1f2823035cc7b6772
->>>>>>> 01c2954498212894780bf3e7930b723f73df20ad
   } catch {
     // Runtime config is unavailable outside Nuxt context.
   }
 
   if (import.meta.client && typeof window !== 'undefined') {
-<<<<<<< HEAD
-=======
-<<<<<<< HEAD
->>>>>>> 01c2954498212894780bf3e7930b723f73df20ad
     pushCandidate(window.location.origin)
   }
 
@@ -557,15 +520,6 @@ const buildFooterPageEndpoints = (slug: string, baseUrl: string) => {
   }
 
   return [apiPath, plainPath]
-<<<<<<< HEAD
-=======
-=======
-    return window.location.origin
-  }
-
-  return 'http://backend:8000'
->>>>>>> 2cbe506af13f3406f4dd92a1f2823035cc7b6772
->>>>>>> 01c2954498212894780bf3e7930b723f73df20ad
 }
 
 const getBackendBaseUrl = () => {
@@ -683,10 +637,6 @@ export const fetchFooterPageBySlug = async (slug: string): Promise<FooterPageDat
     return null
   }
 
-<<<<<<< HEAD
-=======
-<<<<<<< HEAD
->>>>>>> 01c2954498212894780bf3e7930b723f73df20ad
   const baseUrls = getFooterPagesApiBaseUrls()
 
   for (const baseUrl of baseUrls) {
@@ -719,38 +669,6 @@ export const fetchFooterPageBySlug = async (slug: string): Promise<FooterPageDat
   }
 
   return null
-<<<<<<< HEAD
-=======
-=======
-  const baseUrl = getFooterPagesApiBaseUrl()
-
-  try {
-    const payload = await $fetch<FooterPageApiResponse>(
-      `/api/footer-pages/${encodeURIComponent(normalizedSlug)}/`,
-      {
-        baseURL: baseUrl,
-      },
-    )
-
-    const key = (payload?.key || '').trim()
-    const responseSlug = (payload?.slug || '').trim()
-    const title = (payload?.title || '').trim()
-
-    if (!key || !responseSlug || !title) {
-      return null
-    }
-
-    return {
-      key,
-      slug: responseSlug,
-      title,
-      content: (payload?.content || '').trim(),
-    }
-  } catch {
-    return null
-  }
->>>>>>> 2cbe506af13f3406f4dd92a1f2823035cc7b6772
->>>>>>> 01c2954498212894780bf3e7930b723f73df20ad
 }
 
 export const fetchHeroSection = async (): Promise<HeroSectionData | null> => {

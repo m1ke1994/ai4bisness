@@ -34,11 +34,8 @@ const props = defineProps({
 })
 
 const router = useRouter()
-<<<<<<< HEAD
 const runtimeConfig = useRuntimeConfig()
 const siteUrl = String(runtimeConfig.public.siteUrl || '').replace(/\/+$/, '')
-=======
->>>>>>> 01c2954498212894780bf3e7930b723f73df20ad
 
 const { data } = await useAsyncData(
   `footer-page-${props.slug}`,
@@ -55,7 +52,6 @@ if (!data.value) {
 
 const page = computed(() => data.value)
 const pageTitle = computed(() => page.value?.title || 'Страница подвала')
-<<<<<<< HEAD
 const pageDescription = computed(() => {
   const content = (page.value?.content || '').replace(/\s+/g, ' ').trim()
   return content.slice(0, 160)
@@ -79,12 +75,6 @@ useHead({
         },
       ]
     : [],
-=======
-
-useSeoMeta({
-  title: () => pageTitle.value,
-  ogTitle: () => pageTitle.value,
->>>>>>> 01c2954498212894780bf3e7930b723f73df20ad
 })
 
 const goBack = async () => {
@@ -96,7 +86,3 @@ const goBack = async () => {
   await navigateTo('/')
 }
 </script>
-<<<<<<< HEAD
-=======
-
->>>>>>> 01c2954498212894780bf3e7930b723f73df20ad
