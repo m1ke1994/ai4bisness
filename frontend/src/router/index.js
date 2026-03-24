@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import Home from '~/pages/Home.vue'
 import Policy from '~/pages/Policy.vue'
 import Terms from '~/pages/Terms.vue'
+import CompanyBrief from '~/pages/CompanyBrief.vue'
 
 const routes = [
   {
@@ -20,6 +21,12 @@ const routes = [
     name: 'terms',
     component: Terms,
     alias: ['/public-offer', '/user-agreement'],
+  },
+  {
+    path: '/company-brief',
+    name: 'company-brief',
+    component: CompanyBrief,
+    alias: ['/anketa-dlya-kompaniy'],
   },
 ]
 

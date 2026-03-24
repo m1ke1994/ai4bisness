@@ -80,6 +80,7 @@ INSTALLED_APPS = [
     "apps.system_integrations",
     "apps.subscriptions",
     "apps.effectiveness",
+    "apps.company_briefs",
 ]
 
 MIDDLEWARE = [
@@ -192,3 +193,18 @@ SECURE_HSTS_INCLUDE_SUBDOMAINS = env_bool("SECURE_HSTS_INCLUDE_SUBDOMAINS", defa
 SECURE_HSTS_PRELOAD = env_bool("SECURE_HSTS_PRELOAD", default=False)
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+COMPANY_BRIEF_TELEGRAM_BOT_TOKEN = os.getenv(
+    "COMPANY_BRIEF_TELEGRAM_BOT_TOKEN",
+    os.getenv(
+        "DJANGO_COMPANY_BRIEF_TELEGRAM_BOT_TOKEN",
+        os.getenv("TELEGRAM_BOT_TOKEN", ""),
+    ),
+).strip()
+COMPANY_BRIEF_TELEGRAM_CHAT_ID = os.getenv(
+    "COMPANY_BRIEF_TELEGRAM_CHAT_ID",
+    os.getenv(
+        "DJANGO_COMPANY_BRIEF_TELEGRAM_CHAT_ID",
+        os.getenv("TELEGRAM_CHAT_ID", ""),
+    ),
+).strip()

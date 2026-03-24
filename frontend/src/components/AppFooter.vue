@@ -38,6 +38,15 @@
             {{ item.label }}
           </RouterLink>
 
+          <RouterLink
+            to="/company-brief"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="inline-flex h-[38px] items-center justify-center rounded-[12px] border border-[#393E5A] bg-[linear-gradient(90deg,rgba(111,99,255,0.18)_0%,rgba(139,127,255,0.10)_100%)] px-4 text-[14px] font-medium leading-none tracking-[-0.01em] text-white transition hover:border-[#5A62A2] hover:bg-[linear-gradient(90deg,rgba(111,99,255,0.28)_0%,rgba(139,127,255,0.16)_100%)] sm:h-[42px] sm:text-[15px]"
+          >
+            Заполнить анкету
+          </RouterLink>
+
         </div>
 
       </div>

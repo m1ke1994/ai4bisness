@@ -114,6 +114,41 @@ const fetchJson = async (path, baseUrl = resolveApiBase()) => {
   return response.json()
 }
 
+const postJson = async (path, payload, baseUrl = resolveApiBase()) => {
+  const normalizedBaseUrl = normalizeBaseUrl(baseUrl)
+  const response = await fetch(`${normalizedBaseUrl}${path}`, {
+    method: 'POST',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  })
+
+  let responsePayload = null
+  try {
+    responsePayload = await response.json()
+  } catch {
+    responsePayload = null
+  }
+
+  if (!response.ok) {
+    const error = new Error(
+      String(responsePayload?.message || 'Не удалось отправить данные. Попробуйте еще раз.'),
+    )
+    error.status = response.status
+    error.payload = responsePayload
+    throw error
+  }
+
+  return responsePayload
+}
+
+export const submitCompanyBrief = async (payload) => {
+  const baseUrl = resolveApiBase()
+  return postJson('/api/company-briefs/', payload, baseUrl)
+}
+
 export const fetchHeaderSection = async () => {
   const baseUrl = resolveApiBase()
 
