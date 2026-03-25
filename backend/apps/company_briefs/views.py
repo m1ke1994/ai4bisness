@@ -76,9 +76,16 @@ class CompanyBriefCreateAPIView(APIView):
         if brief.telegram_status == TelegramDeliveryStatus.FAILED:
             return Response(
                 {
-                    "message": "Анкета сохранена, но уведомление в Telegram отправить не удалось. Мы получили данные и обработаем заявку вручную.",
+                    "message": "Анкета успешно отправлена. Уведомление в Telegram не доставлено, но данные сохранены.",
+                    "id": brief.pk,
+                    "telegram_status": (
+                        brief.telegram_status.value
+                        if hasattr(brief.telegram_status, "value")
+                        else brief.telegram_status
+                    ),
+                    "warning": "telegram_delivery_failed",
                 },
-                status=502,
+                status=201,
             )
 
         return Response(

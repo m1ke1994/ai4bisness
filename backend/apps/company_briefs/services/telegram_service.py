@@ -9,6 +9,27 @@ from apps.company_briefs.models import TelegramDeliveryStatus
 logger = logging.getLogger(__name__)
 
 
+def _extract_telegram_error(
+    response: requests.Response,
+    payload: dict | None,
+) -> str:
+    if isinstance(payload, dict):
+        description = str(payload.get("description") or "").strip()
+        error_code = payload.get("error_code")
+
+        if description and error_code:
+            return f"{description} (error_code={error_code})"
+
+        if description:
+            return description
+
+    raw_response_text = str(getattr(response, "text", "") or "").strip()
+    if raw_response_text:
+        return raw_response_text[:500]
+
+    return f"Telegram API returned HTTP {response.status_code}."
+
+
 def send_company_brief_pdf_to_telegram(
     *,
     pdf_bytes: bytes,
@@ -50,14 +71,25 @@ def send_company_brief_pdf_to_telegram(
             files={"document": (file_name, pdf_bytes, "application/pdf")},
             timeout=30,
         )
-        response.raise_for_status()
     except requests.RequestException as exc:
-        logger.exception("Ошибка HTTP при отправке PDF анкеты в Telegram.")
+        logger.exception("Ошибка сети при отправке PDF анкеты в Telegram.")
         return {"status": TelegramDeliveryStatus.FAILED, "error": str(exc)}
 
     try:
         payload = response.json()
     except ValueError:
+        payload = None
+
+    if response.status_code >= 400:
+        error_description = _extract_telegram_error(response, payload)
+        logger.error(
+            "Telegram API вернул HTTP %s при отправке PDF анкеты: %s",
+            response.status_code,
+            error_description,
+        )
+        return {"status": TelegramDeliveryStatus.FAILED, "error": error_description}
+
+    if not isinstance(payload, dict):
         logger.error("Telegram API вернул не-JSON ответ при отправке PDF анкеты.")
         return {
             "status": TelegramDeliveryStatus.FAILED,
